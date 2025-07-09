@@ -10,4 +10,3 @@ class MinionStats:
     movement_speed: float
     mass: int
     image_loc: str
-    is_player_controlled: bool

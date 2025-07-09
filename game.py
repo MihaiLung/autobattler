@@ -31,8 +31,8 @@ class CharacterGroup(pygame.sprite.Group):
 orc_group = CharacterGroup()
 elf_group = CharacterGroup()
 
-num_orcs = 10
-num_elfs = 30
+num_orcs = 30
+num_elfs = 100
 
 for _ in range(random.randint(num_orcs//2,num_orcs)):
     orc_group.add(Character(orc_stats, camera))
@@ -47,10 +47,10 @@ refresh_targets_timer = 0
 while True:
 
     refresh_targets_timer += 1
-    # if refresh_targets_timer>120:
-    #     refresh_targets_timer = 0
-    #     orc_group.set_targets(elf_group)
-    #     elf_group.set_targets(orc_group)
+    if refresh_targets_timer>120:
+        refresh_targets_timer = 0
+        orc_group.set_targets(elf_group)
+        elf_group.set_targets(orc_group)
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -60,42 +60,6 @@ while True:
     background = pygame.image.load("assets/background.jpg")
     background = pygame.transform.scale(background, (WIDTH, HEIGHT) )
     screen.blit(background, (0, 0))
-
-
-    # collision
-    all_sprites = orc_group.sprites()+elf_group.sprites()
-    # for s in all_sprites:
-    #     for target in all_sprites:
-    #         if s is target:
-    #             continue
-    #         else:
-    #             intersection_rect = s.rect.clip(target.rect)
-    #             intersection_area = intersection_rect.width * intersection_rect.height
-    #             if intersection_area >0.1:
-    #                 direction = pygame.Vector2(s.rect.center) - pygame.Vector2(target.rect.center)
-    #                 if direction.magnitude() > 0:
-    #                     s.move(direction.normalize()*intersection_area/100*SCALE*target.stats.mass**2/s.stats.mass**2)
-    if refresh_targets_timer%5==0:
-
-        d_quadrants = {}
-
-        for sprite in all_sprites:
-            quadrant = sprite.get_quadrant()
-            if quadrant not in d_quadrants:
-                d_quadrants[quadrant] = []
-            d_quadrants[quadrant].append(sprite)
-        for quadrant in d_quadrants:
-            for s in d_quadrants[quadrant]:
-                for target in all_sprites:
-                    if s is target:
-                        continue
-                    else:
-                        intersection_rect = s.rect.clip(target.rect)
-                        intersection_area = intersection_rect.width * intersection_rect.height
-                        if intersection_area >0.1:
-                            direction = pygame.Vector2(s.rect.center) - pygame.Vector2(target.rect.center)
-                            if direction.magnitude() > 0:
-                                s.move(direction.normalize()*intersection_area/100*SCALE*target.stats.mass**2/s.stats.mass**2)
 
 
     need_refresh_targets = False
@@ -123,6 +87,41 @@ while True:
             need_refresh_targets = True
     if need_refresh_targets:
         orc_group.set_targets(elf_group)
+
+        # collision
+    all_sprites = orc_group.sprites() + elf_group.sprites()
+    if refresh_targets_timer % 2 == 0:
+
+        # assign sprites to quadrants
+        d_quadrants = {}
+        for sprite in all_sprites:
+            quadrant = sprite.get_quadrant()
+            if quadrant not in d_quadrants:
+                d_quadrants[quadrant] = []
+            d_quadrants[quadrant].append(sprite)
+
+        # Quadrant-by-quadrant, resolve conflicts
+        for quadrant in d_quadrants:
+            # Iterate over each sprite in a given quadrant
+            for s in d_quadrants[quadrant]:
+                # Iterate over all other sprite it could interact with
+                for target in d_quadrants[quadrant]:
+                    if s is target:
+                        continue
+                    else:
+                        intersection_rect = s.rect.clip(target.rect)
+                        intersection_area = intersection_rect.width * intersection_rect.height
+                        # If collision detected -> resolve
+                        if intersection_area > 0.01:
+                            source_force = s.momentum * s.stats.mass
+                            target_force = target.momentum * target.stats.mass
+                            # direction = source_force + target_force
+                            direction = pygame.Vector2(s.rect.center) - pygame.Vector2(target.rect.center)
+                            perpendicular = direction.rotate(90)
+
+                            if (direction.magnitude() > 0.05) and (s.momentum.magnitude() > 0.05):
+                                s.apply_force_to_object(direction.normalize() * intersection_area * target.stats.mass / s.stats.mass)
+                                # s.momentum = s.momentum.reflect(direction)
 
     orc_group.draw(screen)
     elf_group.draw(screen)
