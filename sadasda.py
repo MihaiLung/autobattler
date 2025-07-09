@@ -1,133 +1,148 @@
 import pygame
-import random
 import math
 
+# Initialize Pygame
 pygame.init()
-screen = pygame.display.set_mode((550, 300))
-FONT = pygame.font.SysFont(None, 22)
 
+SCREEN_WIDTH = 800
+SCREEN_HEIGHT = 600
+screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+pygame.display.set_caption("Physics Collision Simulation")
 
-class Creature(pygame.sprite.Sprite):
-    def __init__(self, x, y, color, health, attack):
+WHITE = (255, 255, 255)
+RED = (255, 0, 0)
+BLUE = (0, 0, 255)
+GREEN = (0, 255, 0)
+
+class Ball(pygame.sprite.Sprite):
+    def __init__(self, radius, mass, color, pos, velocity):
         super().__init__()
-        self.image_raw = pygame.Surface((40, 40), pygame.SRCALPHA)
-        self.image_raw.fill(color)
-        pygame.draw.circle(self.image_raw, color, (20, 20), 20)
-        self.image = self.image_raw.copy()
-        self.rect = self.image.get_rect(center=(x, y))
-        self.health = health
-        self.attack = attack
-        self.update_image()
+        self.radius = radius
+        self.mass = mass
+        self.color = color
+        self.image = pygame.Surface((radius * 2, radius * 2), pygame.SRCALPHA) # SRCALPHA for transparency
+        pygame.draw.circle(self.image, self.color, (radius, radius), radius)
+        self.rect = self.image.get_rect(center=pos)
+        self.pos = pygame.math.Vector2(pos)
+        self.velocity = pygame.math.Vector2(velocity)
 
-    def update_image(self):
-        self.image = self.image_raw.copy()
-        health_surf = FONT.render(str(self.health), True, (255, 0, 0))
-        attack_surf = FONT.render(str(self.attack), True, (0, 0, 0))
-        self.image.blit(health_surf, (2, self.image.get_height() - health_surf.get_height() - 2))
-        self.image.blit(attack_surf, (self.image.get_width() - attack_surf.get_width() - 2,
-                                      self.image.get_height() - attack_surf.get_height() - 2))
+    def update(self, dt):
+        self.pos += self.velocity * dt
+        self.rect.center = (int(self.pos.x), int(self.pos.y))
 
-    def draw(self, surface, offset=(0, 0)):
-        # offset is (camera_x, camera_y)
-        pos = self.rect.move(-offset[0], -offset[1])
-        surface.blit(self.image, pos)
+        # Basic wall collisions (reflect velocity)
+        if self.rect.left < 0 or self.rect.right > SCREEN_WIDTH:
+            self.velocity.x *= -1
+            # Push back to prevent sticking
+            if self.rect.left < 0: self.rect.left = 0
+            if self.rect.right > SCREEN_WIDTH: self.rect.right = SCREEN_WIDTH
+            self.pos.x = self.rect.centerx # Update float position from rect
+
+        if self.rect.top < 0 or self.rect.bottom > SCREEN_HEIGHT:
+            self.velocity.y *= -1
+            # Push back to prevent sticking
+            if self.rect.top < 0: self.rect.top = 0
+            if self.rect.bottom > SCREEN_HEIGHT: self.rect.bottom = SCREEN_HEIGHT
+            self.pos.y = self.rect.centery # Update float position from rect
+
+def resolve_collision(ball1, ball2, elasticity=1.0):
+    """
+    Resolves a collision between two circular balls using physics formulas.
+    elasticity: 1.0 for perfectly elastic, 0.0 for perfectly inelastic.
+    """
+    # 1. Get collision normal
+    normal = ball1.pos - ball2.pos
+    distance = normal.length()
+
+    # Avoid division by zero if centers are identical
+    if distance == 0:
+        # If they are exactly on top of each other, assign a random normal
+        # and slightly separate them to prevent infinite loop.
+        normal = pygame.math.Vector2(1, 0).rotate(pygame.time.get_ticks() % 360)
+        distance = 1.0 # arbitrary non-zero value
+        print("Warning: Balls at same position, random normal assigned.")
+
+    if distance < ball1.radius + ball2.radius: # Collision detected (and overlap)
+        # 2. Resolve overlap
+        overlap = (ball1.radius + ball2.radius) - distance
+        normal_normalized = normal.normalize()
+
+        # Move balls apart based on mass (lighter moves more)
+        total_mass = ball1.mass + ball2.mass
+        ball1.pos += normal_normalized * (overlap * (ball2.mass / total_mass))
+        ball2.pos -= normal_normalized * (overlap * (ball1.mass / total_mass))
+
+        # Update rect centers after position adjustment
+        ball1.rect.center = (int(ball1.pos.x), int(ball1.pos.y))
+        ball2.rect.center = (int(ball2.pos.x), int(ball2.pos.y))
 
 
-class Orc(Creature):
-    def __init__(self, x, y):
-        super().__init__(x, y, (90, 180, 60), 12, 8)
+        # 3. Calculate initial relative velocity along normal
+        relative_velocity = ball1.velocity - ball2.velocity
+        velocity_along_normal = relative_velocity.dot(normal_normalized)
 
+        # Only apply impulse if objects are moving towards each other
+        if velocity_along_normal > 0:
+            return # Already moving apart or parallel, no new impulse needed
 
-class Elf(Creature):
-    def __init__(self, x, y):
-        super().__init__(x, y, (60, 120, 180), 9, 10)
+        # 4. Calculate impulse magnitude
+        # Impulse magnitude formula
+        j = -(1 + elasticity) * velocity_along_normal
+        j /= (1 / ball1.mass) + (1 / ball2.mass)
 
+        # 5. Apply impulse to update velocities
+        impulse_vector = normal_normalized * j
 
-# Camera class
-class Camera:
-    def __init__(self, width, height):
-        self.pos = pygame.Vector2(0, 0)
-        self.width = width
-        self.height = height
+        ball1.velocity += impulse_vector / ball1.mass
+        ball2.velocity -= impulse_vector / ball2.mass # Subtract for ball2 as normal points away from it
 
-    def center_on(self, target_rect):
-        self.pos.x = target_rect.centerx - self.width // 2
-        self.pos.y = target_rect.centery - self.height // 2
+# --- Main Game Loop ---
+all_sprites = pygame.sprite.Group()
 
+# Create some balls
+ball1 = Ball(radius=20, mass=1.0, color=RED, pos=(100, 300), velocity=(50, -30))
+ball2 = Ball(radius=30, mass=2.0, color=BLUE, pos=(300, 300), velocity=(-20, 10))
+ball3 = Ball(radius=25, mass=0.5, color=GREEN, pos=(500, 200), velocity=(-40, 60))
 
-# Closest function
-def find_closest(source_group, target_group):
-    pairings = {}
-    for s in source_group:
-        # Find t in target_group with min distance to s
-        min_t = min(target_group,
-                    key=lambda t: (s.rect.centerx - t.rect.centerx) ** 2 + (s.rect.centery - t.rect.centery) ** 2)
-        pairings[s] = min_t
-    return pairings
+all_sprites.add(ball1, ball2, ball3)
 
-
-# --- Demo setup ---
-
-orc_group = pygame.sprite.Group()
-elf_group = pygame.sprite.Group()
-for _ in range(5):
-    orc_group.add(Orc(random.randint(50, 450), random.randint(50, 250)))
-    elf_group.add(Elf(random.randint(50, 450), random.randint(50, 250)))
-
-orc_camera = Camera(275, 300)  # Each camera - half the screen width
-elf_camera = Camera(275, 300)
-
-running = True
 clock = pygame.time.Clock()
-selected_orc = next(iter(orc_group))
-selected_elf = next(iter(elf_group))
-frame = 0
+running = True
 
 while running:
+    dt = clock.tick(60) / 1000.0 # Delta time in seconds
+
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
 
-    # Center each camera on first orc/elf for demo
-    orc_camera.center_on(selected_orc.rect)
-    elf_camera.center_on(selected_elf.rect)
+    # Update sprite positions
+    all_sprites.update(dt)
 
-    # --- Compute nearests ---
-    orc_to_elf = find_closest(orc_group, elf_group)
-    elf_to_orc = find_closest(elf_group, orc_group)
-    # (You could, for example, highlight these or draw lines)
+    # Collision detection and response (nested loop for all pairs)
+    sprites_list = all_sprites.sprites()
+    num_sprites = len(sprites_list)
 
-    screen.fill((30, 30, 30))
+    for i in range(num_sprites):
+        sprite_a = sprites_list[i]
+        for j in range(i + 1, num_sprites): # Avoid self-collision and duplicate pairs
+            sprite_b = sprites_list[j]
 
-    # Draw orc's camera view (left)
-    orc_view = pygame.Surface((275, 300))
-    orc_view.fill((30, 30, 30))
-    for orc in orc_group:
-        orc.draw(orc_view, orc_camera.pos)
-    for elf in elf_group:
-        elf.draw(orc_view, orc_camera.pos)
-    # (optionally, draw lines from each orc to their closest elf)
-    for orc, closest_elf in orc_to_elf.items():
-        ox, oy = orc.rect.centerx - orc_camera.pos.x, orc.rect.centery - orc_camera.pos.y
-        ex, ey = closest_elf.rect.centerx - orc_camera.pos.x, closest_elf.rect.centery - orc_camera.pos.y
-        pygame.draw.line(orc_view, (255, 255, 0), (ox, oy), (ex, ey), 1)
-    screen.blit(orc_view, (0, 0))
+            # For rectangular sprites using colliderect:
+            # if sprite_a.rect.colliderect(sprite_b.rect):
+            #     # For simple Rect collision, calculating proper normal and overlap is harder.
+            #     # You'd need to determine the axis of least penetration.
+            #     # This usually involves SAT (Separating Axis Theorem) for complex shapes.
+            #     # For circles, it's straightforward.
 
-    # Draw elf's camera view (right)
-    elf_view = pygame.Surface((275, 300))
-    elf_view.fill((30, 30, 30))
-    for orc in orc_group:
-        orc.draw(elf_view, elf_camera.pos)
-    for elf in elf_group:
-        elf.draw(elf_view, elf_camera.pos)
-    # (optionally, draw lines from each elf to their closest orc)
-    for elf, closest_orc in elf_to_orc.items():
-        ex, ey = elf.rect.centerx - elf_camera.pos.x, elf.rect.centery - elf_camera.pos.y
-        ox, oy = closest_orc.rect.centerx - elf_camera.pos.x, closest_orc.rect.centery - elf_camera.pos.y
-        pygame.draw.line(elf_view, (255, 0, 255), (ex, ey), (ox, oy), 1)
-    screen.blit(elf_view, (275, 0))
+            # For circular sprites (like our Ball class):
+            distance = sprite_a.pos.distance_to(sprite_b.pos)
+            if distance < sprite_a.radius + sprite_b.radius:
+                resolve_collision(sprite_a, sprite_b, elasticity=0.9) # Adjust elasticity (0.0 to 1.0)
 
+    # Drawing
+    screen.fill((30, 30, 30)) # Dark grey background
+    all_sprites.draw(screen)
     pygame.display.flip()
-    clock.tick(60)
-    frame += 1
+
 pygame.quit()

@@ -2,6 +2,7 @@ from dataclasses import dataclass
 
 @dataclass
 class MinionStats:
+    size: int
     health: int
     armour: int
     attack: int

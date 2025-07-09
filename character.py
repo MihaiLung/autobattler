@@ -7,14 +7,13 @@ import enum
 from typing import Optional
 from dataclasses import dataclass
 
-FONT = pygame.font.SysFont(None, 36)
+FONT = pygame.font.SysFont(None, 30)
 
 
 class CharacterActions(enum.Enum):
     ATTACKING = "attacking"
     IDLE = "idle"
     MOVING = "moving"
-
 
 
 class Coordinator:
@@ -27,7 +26,9 @@ class AttackAnimator(Coordinator):
         super().__init__()
         self.is_finished = False
         self.step = 0
-        self.target_direction = target_direction.normalize()*speed
+        self.target_direction = target_direction
+        if self.target_direction.magnitude() > 0:
+            self.target_direction = target_direction.normalize()*speed
         self.attack_direction = None
 
     def update(self):
@@ -56,12 +57,13 @@ class AttackAnimator(Coordinator):
 class Character(pygame.sprite.Sprite):
     def __init__(self, stats: MinionStats, camera):
         super().__init__(camera)
+        self.stats = stats
         self.image_raw = pygame.image.load(stats.image_loc).convert_alpha()
-        self.image_raw = pygame.transform.smoothscale(self.image_raw, (100, 100))
+        self.image_raw = pygame.transform.smoothscale(self.image_raw, (stats.size*SCALE, stats.size*SCALE))
         self.image = self.image_raw.copy()
         self.rect = self.image.get_rect()
         self.position = pygame.Vector2(self.rect.topleft)
-        self.speed = stats.movement_speed
+        self.speed = stats.movement_speed*SCALE
         self.current_health = stats.health
         self.armor = stats.armour
         self.attack = stats.attack
@@ -71,6 +73,10 @@ class Character(pygame.sprite.Sprite):
         self.active_animator: Optional[AttackAnimator] = None
         self.target = None
         self.update_image()
+
+    def get_quadrant(self):
+        quadrant_vector = pygame.Vector2(self.rect.center)/QUADRANT_SIZE
+        return (int(quadrant_vector[0]), int(quadrant_vector[1]))
 
     def update_image(self):
         # Create a fresh copy so we never draw over the original
@@ -92,11 +98,14 @@ class Character(pygame.sprite.Sprite):
     def damage(self, target: 'Character'):
         target.current_health -= self.attack-target.armor
 
-    def set_target_rect(self, target: 'Character'):
+    def set_target(self, target: 'Character'):
         self.target = target
 
 
     def update(self):
+        if self.current_health <= 0:
+            self.kill()
+            return "dead"
         if self.current_action == CharacterActions.ATTACKING:
             impact = self.active_animator.update()
             if impact:
