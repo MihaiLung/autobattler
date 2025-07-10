@@ -1,6 +1,32 @@
 import pygame
+
 from settings import *
 from typing import List
+import random
+
+def get_random_point_in_rect(rect):
+    """
+    Returns a random (x, y) coordinate pair within the given pygame.Rect.
+
+    Args:
+        rect (pygame.Rect): The rectangle to get a random point from.
+
+    Returns:
+        tuple: A tuple (x, y) representing a random point within the rect.
+    """
+    random_x = random.randint(rect.left, rect.right - 1)
+    random_y = random.randint(rect.top, rect.bottom - 1)
+    return (random_x, random_y)
+
+def is_sprite_on_edge(char: pygame.sprite.Sprite) -> bool:
+    if char.rect.left==0 or char.rect.top==0:
+        return True
+    elif char.rect.right==WIDTH:
+        return True
+    elif char.rect.bottom==HEIGHT:
+        return True
+    else:
+        return False
 
 def sprite_distance(sprite1, sprite2):
     """

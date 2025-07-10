@@ -1,18 +1,19 @@
 import pygame
+from settings import *
+
+pygame.init()
+screen = pygame.display.set_mode((WIDTH, HEIGHT) )
+
 from sys import exit
 
-from game_logic import update_all_character_states, resolve_collisions
-from settings import *
+from game_logic import update_all_character_states, resolve_collisions, get_attack_visuals
 from character import Character, DamageAction, CharacterActions
 from minions.minion_stats import elf_stats, orc_stats
-import random
 
 from utils import *
 
 
-pygame.init()
 pygame.display.set_caption("World of VAVAVAVA")
-screen = pygame.display.set_mode((WIDTH, HEIGHT) )
 clock = pygame.time.Clock()
 
 
@@ -40,8 +41,10 @@ orc_group = CharacterGroup()
 elf_group = CharacterGroup()
 all_group = CharacterGroup()
 
-num_orcs = 10
-num_elfs = 20
+# attack_animations = pygame.sprite.Group()
+
+num_orcs = 50
+num_elfs = 150
 
 for _ in range(random.randint(num_orcs//2,num_orcs)):
     new_orc = Character(orc_stats)
@@ -57,9 +60,8 @@ orc_group.set_targets(elf_group)
 elf_group.set_targets(orc_group)
 
 refresh_targets_timer = 0
+
 while True:
-
-
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             pygame.quit()
@@ -89,6 +91,9 @@ while True:
 
     orc_group.draw(screen)
     elf_group.draw(screen)
+
+    get_attack_visuals(all_group).draw(screen)
+
 
     pygame.display.update()
     clock.tick(120)

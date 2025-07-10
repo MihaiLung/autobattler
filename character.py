@@ -1,4 +1,6 @@
 import pygame
+
+from minions.minion_stats import elf_stats, orc_stats
 from settings import *
 import random
 from minions.minion_base_class import MinionStats
@@ -7,9 +9,9 @@ import enum
 from typing import Optional
 from dataclasses import dataclass
 
-from utils import sprite_distance
+from utils import sprite_distance, get_random_point_in_rect
 
-FONT = pygame.font.SysFont(None, 30)
+FONT = pygame.font.SysFont(None, int(30*SCALE))
 
 
 class CharacterActions(enum.Enum):
@@ -17,34 +19,57 @@ class CharacterActions(enum.Enum):
     IDLE = "idle"
     MOVING = "moving"
 
+scale= elf_stats.attack*10*SCALE
+attack_image_elf = pygame.image.load("assets/smoke.png").convert_alpha()
+attack_image_elf = pygame.transform.smoothscale(attack_image_elf, (scale, scale))
+
+scale= orc_stats.attack*10*SCALE
+attack_image_orc = pygame.image.load("assets/smoke_evil.png").convert_alpha()
+attack_image_orc = pygame.transform.smoothscale(attack_image_orc, (scale, scale))
+
+class AttackImpactSprite(pygame.sprite.Sprite):
+    def __init__(self, attack_image):
+        pygame.sprite.Sprite.__init__(self)
+        self.image = attack_image
+        self.rect = self.image.get_rect()
+
+elf_attack = AttackImpactSprite(attack_image_elf)
+orc_attack = AttackImpactSprite(attack_image_orc)
+
+
+class AttackSprite(pygame.sprite.Sprite):
+    def
+
 class AttackAnimator:
-    def __init__(self, target_direction: pygame.math.Vector2, speed: float):
+    def __init__(
+            self,
+            attack_impact_location: pygame.Rect,
+            attack_sprite: AttackImpactSprite = elf_attack,
+    ):
         self.is_finished = False
         self.step = 0
-        self.target_direction = target_direction.normalize()*speed
-        self.target_direction = target_direction
-        if self.target_direction.magnitude() > 0:
-            self.target_direction = target_direction.normalize()*speed
-        self.attack_direction = None
+        self.attack_sprite = attack_sprite
+        self.attack_sprite.rect.center = get_random_point_in_rect(attack_impact_location)
+
+
+
 
     def update(self):
 
         # Wind up attack
         impact = False
-        if self.step < 20:
-            self.attack_direction = 0*self.target_direction
-        # Perform attack
-        elif self.step < 27:
-            self.attack_direction = 0* self.target_direction
-        elif self.step == 27:
+
+        times = [20,40]
+
+        if self.step < times[0]:
+            self.attack_sprite.image.set_alpha(250*(self.step+1)/times[0])
+        if self.step == times[0]:
             impact = True
-        elif self.step < 40:
-            self.attack_direction = 0*self.target_direction
-        elif self.step < 60:
-            self.attack_direction = 0*self.target_direction
+        elif self.step < times[1]:
+            self.attack_sprite.image.set_alpha(250*(times[1]-self.step)/times[1])
         else:
             self.is_finished = True
-            self.attack_direction = None
+            self.attack_sprite.kill()
         self.step += 1
         return impact
 
@@ -74,6 +99,13 @@ class Character(pygame.sprite.Sprite):
         self.active_animator: Optional[AttackAnimator] = None
         self.target = None
         self.next_move = pygame.Vector2(0,0)
+        self.last_move = pygame.Vector2(0,0)
+
+        # Set attack image
+        if self.stats is orc_stats:
+            self.attack_image = orc_attack
+        else:
+            self.attack_image = elf_attack
 
         self.collision_enabled = True
 
@@ -131,16 +163,18 @@ class Character(pygame.sprite.Sprite):
                 self.current_action = CharacterActions.IDLE
                 self.active_animator = None
 
-            else:
-                self.next_move = self.active_animator.attack_direction
+            # else:
+            #     self.next_move = self.active_animator.attack_direction
         else:
             self.collision_enabled = True
             self.current_action = CharacterActions.MOVING
             if self.distance_from_target < 0.1:
                 self.current_action = CharacterActions.ATTACKING
-                target_direction = pygame.Vector2(self.target.rect.topleft)-pygame.Vector2(self.rect.topleft)
-                self.active_animator = AttackAnimator(target_direction, self.speed)
+                # target_direction = pygame.Vector2(self.target.rect.topleft)-pygame.Vector2(self.rect.topleft)
+                self.active_animator = AttackAnimator(self.target.rect, self.attack_image)
                 self.collision_enabled = False
+                self.last_move = pygame.Vector2(0,0)
+                self.next_move = pygame.Vector2(0,0)
             else:
                 self.move_towards(self.target.rect)
         return None
@@ -170,7 +204,10 @@ class Character(pygame.sprite.Sprite):
 
 
     def update_rect_position(self):
-        self.position += self.next_move
+        # High interpolation value = more momentum
+        actual_move = self.next_move.lerp(self.last_move, 0.9)
+        self.last_move = actual_move
+        self.position += actual_move
         self.rect.topleft = (int(self.position.x), int(self.position.y))
         if self.rect.top<0:
             self.rect.top=0
