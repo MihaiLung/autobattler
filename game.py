@@ -6,7 +6,7 @@ screen = pygame.display.set_mode((WIDTH, HEIGHT) )
 
 from sys import exit
 
-from game_logic import update_all_character_states, resolve_collisions, get_attack_visuals
+from game_logic import resolve_collisions, update_group_states
 from character import Character, DamageAction, CharacterActions
 from minions.minion_stats import elf_stats, orc_stats
 
@@ -41,10 +41,10 @@ orc_group = CharacterGroup()
 elf_group = CharacterGroup()
 all_group = CharacterGroup()
 
-# attack_animations = pygame.sprite.Group()
+attack_animations = pygame.sprite.Group()
 
-num_orcs = 50
-num_elfs = 150
+num_orcs = 80
+num_elfs = 300
 
 for _ in range(random.randint(num_orcs//2,num_orcs)):
     new_orc = Character(orc_stats)
@@ -79,7 +79,9 @@ while True:
     screen.blit(background, (0, 0))
 
     # Runs the update command on everyone, which gets move intentions, and resolves damage
-    update_all_character_states(orc_group, elf_group)
+    # update_all_character_states(orc_group, elf_group)
+    update_group_states(orc_group, elf_group, attack_animations)
+    update_group_states(elf_group, orc_group, attack_animations)
 
     # Collision
     # resolve_collisions(orc_group)
@@ -92,7 +94,8 @@ while True:
     orc_group.draw(screen)
     elf_group.draw(screen)
 
-    get_attack_visuals(all_group).draw(screen)
+    attack_animations.update()
+    attack_animations.draw(screen)
 
 
     pygame.display.update()

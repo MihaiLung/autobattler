@@ -4,6 +4,14 @@ from settings import *
 from typing import List
 import random
 
+def yield_array_elements(arr):
+    """
+    Yields elements of a NumPy array one by one.
+    After yielding all elements, subsequent calls to next() will raise StopIteration.
+    """
+    for item in arr.flat: # .flat flattens any array into an iterator
+        yield item
+
 def get_random_point_in_rect(rect):
     """
     Returns a random (x, y) coordinate pair within the given pygame.Rect.

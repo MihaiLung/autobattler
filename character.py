@@ -8,8 +8,9 @@ import math
 import enum
 from typing import Optional
 from dataclasses import dataclass
+import numpy as np
 
-from utils import sprite_distance, get_random_point_in_rect
+from utils import sprite_distance, get_random_point_in_rect, yield_array_elements
 
 FONT = pygame.font.SysFont(None, int(30*SCALE))
 
@@ -20,7 +21,7 @@ class CharacterActions(enum.Enum):
     MOVING = "moving"
 
 scale= elf_stats.attack*10*SCALE
-attack_image_elf = pygame.image.load("assets/smoke.png").convert_alpha()
+attack_image_elf = pygame.image.load("assets/sword_slice.png").convert_alpha()
 attack_image_elf = pygame.transform.smoothscale(attack_image_elf, (scale, scale))
 
 scale= orc_stats.attack*10*SCALE
@@ -28,31 +29,61 @@ attack_image_orc = pygame.image.load("assets/smoke_evil.png").convert_alpha()
 attack_image_orc = pygame.transform.smoothscale(attack_image_orc, (scale, scale))
 
 class AttackImpactSprite(pygame.sprite.Sprite):
-    def __init__(self, attack_image):
+    def __init__(self, attack_image, schedule=(3,30,50)):
         pygame.sprite.Sprite.__init__(self)
-        self.image = attack_image
+        self.image = attack_image.copy()
         self.rect = self.image.get_rect()
+        self.schedule = schedule
+        # self.step = 0
+
+        alphas = np.concat((
+            np.linspace(0, 254, schedule[0]),
+            np.linspace(254, 254, schedule[1]),
+            np.linspace(254, 0, schedule[2]),
+        ))
+        self.iterator = yield_array_elements(alphas)
+
+    def create_new_instance(self, attack_impact_location):
+        new_attack = AttackImpactSprite(self.image, self.schedule)
+        new_attack.rect.center = get_random_point_in_rect(attack_impact_location)
+        return new_attack
+
+    def yield_next_alpha(self):
+        try:
+            return next(self.iterator)
+        except StopIteration:
+            return None
+
+    def update(self):
+        alpha = self.yield_next_alpha()
+        # print(alpha)
+        if alpha is not None:
+            self.image.set_alpha(int(alpha))
+            pass
+        else:
+            self.kill()
+
 
 elf_attack = AttackImpactSprite(attack_image_elf)
 orc_attack = AttackImpactSprite(attack_image_orc)
 
 
-class AttackSprite(pygame.sprite.Sprite):
-    def
 
 class AttackAnimator:
     def __init__(
             self,
-            attack_impact_location: pygame.Rect,
-            attack_sprite: AttackImpactSprite = elf_attack,
+            # attack_impact_location: pygame.Rect,
+            # attack_sprite: AttackImpactSprite = elf_attack,
     ):
         self.is_finished = False
         self.step = 0
-        self.attack_sprite = attack_sprite
-        self.attack_sprite.rect.center = get_random_point_in_rect(attack_impact_location)
+        # self.attack_sprite = attack_sprite
+        # self.attack_impact_location = attack_impact_location
 
-
-
+    # def start_attack_animation(self):
+    #     attack_sprite = self.attack_sprite
+    #     attack_sprite.rect.center = get_random_point_in_rect(self.attack_impact_location)
+    #     return attack_sprite
 
     def update(self):
 
@@ -62,14 +93,13 @@ class AttackAnimator:
         times = [20,40]
 
         if self.step < times[0]:
-            self.attack_sprite.image.set_alpha(250*(self.step+1)/times[0])
-        if self.step == times[0]:
+            pass
+        elif self.step == times[0]:
             impact = True
         elif self.step < times[1]:
-            self.attack_sprite.image.set_alpha(250*(times[1]-self.step)/times[1])
+            pass
         else:
             self.is_finished = True
-            self.attack_sprite.kill()
         self.step += 1
         return impact
 
@@ -171,10 +201,11 @@ class Character(pygame.sprite.Sprite):
             if self.distance_from_target < 0.1:
                 self.current_action = CharacterActions.ATTACKING
                 # target_direction = pygame.Vector2(self.target.rect.topleft)-pygame.Vector2(self.rect.topleft)
-                self.active_animator = AttackAnimator(self.target.rect, self.attack_image)
+                self.active_animator = AttackAnimator()
                 self.collision_enabled = False
                 self.last_move = pygame.Vector2(0,0)
                 self.next_move = pygame.Vector2(0,0)
+                return self.attack_image.create_new_instance(self.target.rect)
             else:
                 self.move_towards(self.target.rect)
         return None
