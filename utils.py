@@ -1,0 +1,46 @@
+import pygame
+from settings import *
+from typing import List
+
+def sprite_distance(sprite1, sprite2):
+    """
+    Gets distance between two sprites, reduced by their respective radii. Assumes spherical-ish sprites.
+    :param sprite1:
+    :param sprite2:
+    :return:
+    """
+    radii = (sprite1.radius + sprite2.radius) / 2
+    linking_vector = (sprite1.position - sprite2.position)
+    return linking_vector.magnitude()-radii
+
+def get_colliding_sprites(target_rect: pygame.Rect, sprite_group: pygame.sprite.Group):
+    """
+    Returns all sprites in a given sprite group that collide with a target rect.
+
+    Args:
+        target_rect (pygame.Rect): The rect to check for collisions against.
+        sprite_group (pygame.sprite.Group): The group of sprites to check for collisions within.
+
+    Returns:
+        list: A list of sprites from the group that are colliding with the target_rect.
+    """
+    colliding_sprites = []
+    for sprite in sprite_group:
+        # if sprite.collision_enabled:
+            if target_rect.colliderect(sprite.rect):
+                colliding_sprites.append(sprite)
+    return colliding_sprites
+
+def get_all_quadrants(width=WIDTH, height=HEIGHT) -> List[pygame.Rect]:
+
+    quadrants = []
+
+    left = 0
+    while left<width:
+        top = 0
+        while top<height:
+            quadrants.append(pygame.Rect(left, top, QUADRANT_SIZE, QUADRANT_SIZE))
+            top += QUADRANT_SIZE
+        left += QUADRANT_SIZE
+
+    return quadrants

@@ -7,8 +7,6 @@ import enum
 from typing import Optional
 from dataclasses import dataclass
 
-from utils import sprite_distance
-
 FONT = pygame.font.SysFont(None, 30)
 
 
@@ -17,11 +15,17 @@ class CharacterActions(enum.Enum):
     IDLE = "idle"
     MOVING = "moving"
 
-class AttackAnimator:
+
+class Coordinator:
+    def __init__(self):
+        pass
+
+
+class AttackAnimator(Coordinator):
     def __init__(self, target_direction: pygame.math.Vector2, speed: float):
+        super().__init__()
         self.is_finished = False
         self.step = 0
-        self.target_direction = target_direction.normalize()*speed
         self.target_direction = target_direction
         if self.target_direction.magnitude() > 0:
             self.target_direction = target_direction.normalize()*speed
@@ -31,34 +35,39 @@ class AttackAnimator:
 
         # Wind up attack
         impact = False
-        if self.step < 20:
-            self.attack_direction = 0*self.target_direction
-        # Perform attack
-        elif self.step < 27:
-            self.attack_direction = 0* self.target_direction
-        elif self.step == 27:
-            impact = True
-        elif self.step < 40:
-            self.attack_direction = 0*self.target_direction
-        elif self.step < 60:
-            self.attack_direction = 0*self.target_direction
-        else:
-            self.is_finished = True
-            self.attack_direction = None
+        # if self.step < 20:
+        #     self.attack_direction = 0*self.target_direction
+        # # Perform attack
+        # elif self.step < 27:
+        #     self.attack_direction = 4*self.target_direction
+        # elif self.step == 27:
+        #     impact = True
+        # elif self.step < 40:
+        #     self.attack_direction = 3*self.target_direction
+        # elif self.step < 60:
+        #     self.attack_direction = 0*self.target_direction
+        # else:
+        #     self.is_finished = True
+        #     self.attack_direction = None
+        self.attack_direction = 0*self.target_direction
         self.step += 1
+        if self.step==30:
+            impact = True
+        if self.step==60:
+            self.is_finished = True
         return impact
 
 
+
 class Character(pygame.sprite.Sprite):
-    def __init__(self, stats: MinionStats):
-        super().__init__()
+    def __init__(self, stats: MinionStats, camera):
+        super().__init__(camera)
         # Save stats
         self.stats = stats
 
         # Initialize sprite visuals
         self.image_raw = pygame.image.load(stats.image_loc).convert_alpha()
-        self.radius = stats.size*SCALE
-        self.image_raw = pygame.transform.smoothscale(self.image_raw, (self.radius, self.radius))
+        self.image_raw = pygame.transform.smoothscale(self.image_raw, (stats.size*SCALE, stats.size*SCALE))
         self.image = self.image_raw.copy()
         self.rect = self.image.get_rect()
         self.position = pygame.Vector2(self.rect.topleft)
@@ -73,9 +82,7 @@ class Character(pygame.sprite.Sprite):
         self.current_action = CharacterActions.IDLE
         self.active_animator: Optional[AttackAnimator] = None
         self.target = None
-        self.next_move = pygame.Vector2(0,0)
-
-        self.collision_enabled = True
+        # self.momentum = pygame.math.Vector2(0,0)
 
     def get_quadrant(self):
         quadrant_vector = pygame.Vector2(self.rect.center)/QUADRANT_SIZE
@@ -98,28 +105,14 @@ class Character(pygame.sprite.Sprite):
         self.image.blit(health_surf, health_pos)
         self.image.blit(attack_surf, attack_pos)
 
-    def deal_damage(self, target: 'Character'):
+    def damage(self, target: 'Character'):
         target.current_health -= self.stats.attack-target.stats.armour
-
-    def take_damage(self, damage: float):
-        self.current_health -= damage-self.stats.armour
 
     def set_target(self, target: 'Character'):
         self.target = target
 
-    @property
-    def distance_from_target(self):
-        return sprite_distance(self.target, self)
-
 
     def update(self):
-        """
-        This function:
-        1. Kills the sprite when health goes below 0
-        2. Switches between attack and move modes
-        3. Proposes ideal next move action (which is to be updated later by collision resolution)
-        """
-
         if self.current_health <= 0:
             self.kill()
             return "dead"
@@ -132,17 +125,14 @@ class Character(pygame.sprite.Sprite):
                 self.active_animator = None
 
             else:
-                self.next_move = self.active_animator.attack_direction
+                self.apply_force_to_object(self.active_animator.attack_direction)
         else:
-            self.collision_enabled = True
             self.current_action = CharacterActions.MOVING
-            if self.distance_from_target < 0.1:
+            self.move_towards(self.target.rect)
+            if self.rect.colliderect(self.target.rect):
                 self.current_action = CharacterActions.ATTACKING
                 target_direction = pygame.Vector2(self.target.rect.topleft)-pygame.Vector2(self.rect.topleft)
                 self.active_animator = AttackAnimator(target_direction, self.speed)
-                self.collision_enabled = False
-            else:
-                self.move_towards(self.target.rect)
         return None
 
 
@@ -150,41 +140,36 @@ class Character(pygame.sprite.Sprite):
     def randomize_location(self):
         if "elf" in self.stats.image_loc:
             x = random.uniform(100, WIDTH//2-100)
-            y = random.uniform(100, HEIGHT-100)
+            y = random.uniform(100, HEIGHT//2-100)
         else:
             x = random.uniform(WIDTH//2+100, WIDTH-100)
-            y = random.uniform(100, HEIGHT-100)
+            y = random.uniform(HEIGHT//2+100, HEIGHT-100)
         self.position = pygame.Vector2(int(x), int(y))
         self.rect.topleft = self.position
 
 
-    @property
-    def proposed_next_rect(self):
-        return self.rect.move(self.next_move)
-
-    @property
-    def proposed_next_position(self):
-        return self.position+self.next_move
-
-    # def predicted_next_quadrant(self):
-
+    def apply_force_to_object(self, direction: pygame.math.Vector2):
+        if direction.magnitude() > 0.01:
+            self.position += direction
+            self.update_rect_position()
 
     def update_rect_position(self):
-        self.position += self.next_move
         self.rect.topleft = (int(self.position.x), int(self.position.y))
         if self.rect.top<0:
             self.rect.top=0
-            # self.momentum[1] = max(self.momentum[1], 0)
+            self.momentum[1] = max(self.momentum[1], 0)
         if self.rect.bottom>HEIGHT:
             self.rect.bottom=HEIGHT
-            # self.momentum[1] = min(self.momentum[1], 0)
+            self.momentum[1] = min(self.momentum[1], 0)
         if self.rect.left<0:
             self.rect.left=0
-            # self.momentum[0] = max(self.momentum[0], 0)
+            self.momentum[0] = max(self.momentum[0], 0)
         if self.rect.right>WIDTH:
             self.rect.right=WIDTH
-            # self.momentum[0] = min(self.momentum[0], 0)
+            self.momentum[0] = min(self.momentum[0], 0)
 
+
+    # def object_self_movement(self, direction: pygame.math.Vector2):
 
     # ACTION - move towards
     def move_towards(self, target_rect):
@@ -192,14 +177,15 @@ class Character(pygame.sprite.Sprite):
         dy = target_rect.centery - self.rect.centery
         direction = pygame.Vector2(dx, dy)
         dist = math.hypot(dx, dy)
-        if dist > 0.01:
-            velocity = direction.normalize()*self.speed
-            self.next_move = velocity
-    #
-    # def attack(self, target_rect: pygame.Rect):
-    #     # Update character state to attacking
-    #     self.current_action = CharacterActions.ATTACKING
-    #     self.attack_direction = pygame.Vector2(target_rect.x-self.rect.x, target_rect.y-self.rect.y)
+        if dist > 0:
+            direction = direction.normalize()*self.stats.mass/10
+            self.apply_force_to_object(direction)
+
+
+    def attack(self, target_rect: pygame.Rect):
+        # Update character state to attacking
+        self.current_action = CharacterActions.ATTACKING
+        self.attack_direction = pygame.Vector2(target_rect.x-self.rect.x, target_rect.y-self.rect.y)
 
 
 @dataclass

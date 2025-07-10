@@ -14,7 +14,7 @@ elf_stats = MinionStats(
     armour=2,
     attack=5,
     attack_speed=2,
-    movement_speed=1,
+    movement_speed=3,
     mass=100,
     image_loc="assets/elf.png",
 )
@@ -24,8 +24,8 @@ orc_stats = MinionStats(
     health=100,
     armour=1,
     attack=10,
-    attack_speed=2,
-    movement_speed=0.5,
+    attack_speed=3,
+    movement_speed=1,
     mass=180,
     image_loc="assets/orc.png",
 )
