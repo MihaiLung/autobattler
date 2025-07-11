@@ -1,6 +1,7 @@
 import pygame
 
 from character import DamageAction, AttackImpactSprite
+from effects import WeaponSwing
 from utils import get_all_quadrants, get_colliding_sprites, sprite_distance, is_sprite_on_edge
 
 
@@ -41,21 +42,54 @@ def resolve_collisions(group):
                 if overlap > 0.05:
                     mass_ratio = sprite.stats.mass / reference.stats.mass
                     if linking_vector.magnitude()>0:
+                        # sprite_relative_willingness_to_move = 1
+                        # if sprite.collision_enabled:
+                        #     sprite_relative_willingness_to_move *=
+                        # if reference.collision_enabled:
+                        #     sprite_relative_willingness_to_move /= 1
+                        # separation_vector = linking_vector.clamp_magnitude(overlap)
+                        # sprite.next_move += separation_vector/mass_ratio*min(1/sprite_relative_willingness_to_move, 1)
+                        # reference.next_move -= separation_vector*mass_ratio*min(sprite_relative_willingness_to_move, 1)
+
+                        def get_sprite_move_extent(s, ref):
+                            move_extent = 1 if s.collision_enabled else 0.000
+                            return move_extent*4 if is_sprite_on_edge(ref) else move_extent
+
+                        # sprite_move_extent = 1 if sprite.collision_enabled else 0.001
+                        # reference_move_extent = 1 if reference.collision_enabled else 0.001
                         separation_vector = linking_vector.clamp_magnitude(overlap)
-                        if sprite.collision_enabled:
-                            sprite.next_move += separation_vector/mass_ratio
-                        if reference.collision_enabled:
-                            reference.next_move -= separation_vector*mass_ratio
+                        sprite.next_move += separation_vector/mass_ratio*get_sprite_move_extent(sprite, reference)
+                        reference.next_move -= separation_vector*mass_ratio*get_sprite_move_extent(reference, sprite)
 
-                        # If one or both of the sprites are stuck on the corner, significantly increase the force to declump corners
-                        if is_sprite_on_edge(sprite):
-                            if reference.collision_enabled:
-                                reference.next_move -= 4*separation_vector
-                            if sprite.collision_enabled:
-                                sprite.next_move += 4*separation_vector
-                        if is_sprite_on_edge(reference):
-                            if reference.collision_enabled:
-                                reference.next_move -= 4*separation_vector
-                            if sprite.collision_enabled:
-                                sprite.next_move += 4*separation_vector
+                        # # If one or both of the sprites are stuck on the corner, significantly increase the force to declump corners
+                        # if is_sprite_on_edge(sprite):
+                        #     if reference.collision_enabled:
+                        #         reference.next_move -= 4*separation_vector
+                        #     if sprite.collision_enabled:
+                        #         sprite.next_move += 4*separation_vector
+                        # if is_sprite_on_edge(reference):
+                        #     if reference.collision_enabled:
+                        #         reference.next_move -= 4*separation_vector
+                        #     if sprite.collision_enabled:
+                        #         sprite.next_move += 4*separation_vector
 
+
+                        #
+                        # separation_vector = linking_vector.clamp_magnitude(overlap)
+                        # if sprite.collision_enabled:
+                        #     sprite.next_move += separation_vector/mass_ratio
+                        # if reference.collision_enabled:
+                        #     reference.next_move -= separation_vector*mass_ratio
+                        #
+                        # # If one or both of the sprites are stuck on the corner, significantly increase the force to declump corners
+                        # if is_sprite_on_edge(sprite):
+                        #     if reference.collision_enabled:
+                        #         reference.next_move -= 4*separation_vector
+                        #     if sprite.collision_enabled:
+                        #         sprite.next_move += 4*separation_vector
+                        # if is_sprite_on_edge(reference):
+                        #     if reference.collision_enabled:
+                        #         reference.next_move -= 4*separation_vector
+                        #     if sprite.collision_enabled:
+                        #         sprite.next_move += 4*separation_vector
+                        #

@@ -43,15 +43,17 @@ all_group = CharacterGroup()
 
 attack_animations = pygame.sprite.Group()
 
-num_orcs = 80
-num_elfs = 300
+num_orcs = 4
+num_elfs = 100
+proto_orc = Character(orc_stats)
+proto_elf = Character(elf_stats)
 
 for _ in range(random.randint(num_orcs//2,num_orcs)):
-    new_orc = Character(orc_stats)
+    new_orc = proto_orc.copy()
     orc_group.add(new_orc)
     all_group.add(new_orc)
 for _ in range(random.randint(num_elfs//2,num_elfs)):
-    new_elf = Character(elf_stats)
+    new_elf = proto_elf.copy()
     elf_group.add(new_elf)
     all_group.add(new_elf)
 

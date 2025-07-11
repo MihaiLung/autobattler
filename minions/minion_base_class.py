@@ -1,5 +1,8 @@
 from dataclasses import dataclass
 
+import pygame
+
+
 @dataclass
 class MinionStats:
     size: int
@@ -7,6 +10,8 @@ class MinionStats:
     armour: int
     attack: int
     attack_speed: float
+    splash_limit: int
     movement_speed: float
     mass: int
     image_loc: str
+    weapon: pygame.Surface

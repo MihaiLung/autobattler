@@ -9,6 +9,7 @@ import enum
 from typing import Optional
 from dataclasses import dataclass
 import numpy as np
+from effects import WeaponSwing
 
 from utils import sprite_distance, get_random_point_in_rect, yield_array_elements
 
@@ -20,16 +21,17 @@ class CharacterActions(enum.Enum):
     IDLE = "idle"
     MOVING = "moving"
 
-scale= elf_stats.attack*10*SCALE
+scale = elf_stats.attack*10*SCALE
 attack_image_elf = pygame.image.load("assets/sword_slice.png").convert_alpha()
 attack_image_elf = pygame.transform.smoothscale(attack_image_elf, (scale, scale))
 
-scale= orc_stats.attack*10*SCALE
+scale = orc_stats.attack*10*SCALE
 attack_image_orc = pygame.image.load("assets/smoke_evil.png").convert_alpha()
 attack_image_orc = pygame.transform.smoothscale(attack_image_orc, (scale, scale))
+attack_image_orc = pygame.transform.flip(attack_image_orc, True, False)
 
 class AttackImpactSprite(pygame.sprite.Sprite):
-    def __init__(self, attack_image, schedule=(3,30,50)):
+    def __init__(self, attack_image, schedule=(3,30,30)):
         pygame.sprite.Sprite.__init__(self)
         self.image = attack_image.copy()
         self.rect = self.image.get_rect()
@@ -90,7 +92,7 @@ class AttackAnimator:
         # Wind up attack
         impact = False
 
-        times = [20,40]
+        times = [20,120]
 
         if self.step < times[0]:
             pass
@@ -105,16 +107,20 @@ class AttackAnimator:
 
 
 class Character(pygame.sprite.Sprite):
-    def __init__(self, stats: MinionStats):
+    def __init__(self, stats: MinionStats, image_raw: Optional[pygame.Surface] = None):
         super().__init__()
         # Save stats
         self.stats = stats
+        self.radius = stats.size*SCALE
 
         # Initialize sprite visuals
-        self.image_raw = pygame.image.load(stats.image_loc).convert_alpha()
-        self.radius = stats.size*SCALE
-        self.image_raw = pygame.transform.smoothscale(self.image_raw, (self.radius, self.radius))
-        self.image = self.image_raw.copy()
+        if image_raw is None:
+            self.load_image()
+        else:
+            self.image_raw = image_raw
+            self.image = self.image_raw.copy()
+
+        # Initialize position
         self.rect = self.image.get_rect()
         self.position = pygame.Vector2(self.rect.topleft)
         self.randomize_location()
@@ -138,6 +144,15 @@ class Character(pygame.sprite.Sprite):
             self.attack_image = elf_attack
 
         self.collision_enabled = True
+
+    def load_image(self):
+        self.image_raw = pygame.image.load(self.stats.image_loc).convert_alpha()
+        self.image_raw = pygame.transform.smoothscale(self.image_raw, (self.radius, self.radius))
+        self.image = self.image_raw.copy()
+
+
+    def copy(self):
+        return Character(self.stats, self.image_raw.copy())
 
     def get_quadrant(self):
         quadrant_vector = pygame.Vector2(self.rect.center)/QUADRANT_SIZE
@@ -206,6 +221,7 @@ class Character(pygame.sprite.Sprite):
                 self.last_move = pygame.Vector2(0,0)
                 self.next_move = pygame.Vector2(0,0)
                 return self.attack_image.create_new_instance(self.target.rect)
+                # return WeaponSwing(pygame.Vector2(self.rect.center), self.rect, self.target.position-self.position, self.stats.weapon)
             else:
                 self.move_towards(self.target.rect)
         return None
