@@ -15,3 +15,4 @@ class MinionStats:
     mass: int
     image_loc: str
     weapon: pygame.Surface
+    attack_cooldown: int = 90

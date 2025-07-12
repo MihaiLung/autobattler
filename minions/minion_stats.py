@@ -21,7 +21,7 @@ elf_stats = MinionStats(
     attack=5,
     attack_speed=2,
     splash_limit=1,
-    movement_speed=10,
+    movement_speed=3,
     mass=100,
     image_loc="assets/elf.png",
     weapon=sword_image,
@@ -29,7 +29,7 @@ elf_stats = MinionStats(
 
 orc_stats = MinionStats(
     size=150,
-    health=310,
+    health=100,
     armour=1,
     attack=40,
     attack_speed=3,

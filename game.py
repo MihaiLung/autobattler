@@ -43,8 +43,8 @@ all_group = CharacterGroup()
 
 attack_animations = pygame.sprite.Group()
 
-num_orcs = 4
-num_elfs = 100
+num_orcs = 50
+num_elfs = 300
 proto_orc = Character(orc_stats)
 proto_elf = Character(elf_stats)
 

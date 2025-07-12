@@ -25,18 +25,18 @@ scale = elf_stats.attack*10*SCALE
 attack_image_elf = pygame.image.load("assets/sword_slice.png").convert_alpha()
 attack_image_elf = pygame.transform.smoothscale(attack_image_elf, (scale, scale))
 
-scale = orc_stats.attack*10*SCALE
+scale = orc_stats.attack*5*SCALE
 attack_image_orc = pygame.image.load("assets/smoke_evil.png").convert_alpha()
 attack_image_orc = pygame.transform.smoothscale(attack_image_orc, (scale, scale))
 attack_image_orc = pygame.transform.flip(attack_image_orc, True, False)
 
 class AttackImpactSprite(pygame.sprite.Sprite):
-    def __init__(self, attack_image, schedule=(3,30,30)):
+    def __init__(self, attack_image, schedule=(3,30,30), target: Optional['Character']=None, damage: Optional[int] = None):
         pygame.sprite.Sprite.__init__(self)
         self.image = attack_image.copy()
         self.rect = self.image.get_rect()
         self.schedule = schedule
-        # self.step = 0
+        self.step = 0
 
         alphas = np.concat((
             np.linspace(0, 254, schedule[0]),
@@ -44,11 +44,17 @@ class AttackImpactSprite(pygame.sprite.Sprite):
             np.linspace(254, 0, schedule[2]),
         ))
         self.iterator = yield_array_elements(alphas)
+        self.target = target
+        self.damage = damage
 
-    def create_new_instance(self, attack_impact_location):
-        new_attack = AttackImpactSprite(self.image, self.schedule)
+
+    def create_new_instance(self, attack_impact_location, target, damage):
+        new_attack = AttackImpactSprite(self.image, self.schedule, target, damage)
         new_attack.rect.center = get_random_point_in_rect(attack_impact_location)
         return new_attack
+
+    def set_target(self, target: 'Character'):
+        self.target = target
 
     def yield_next_alpha(self):
         try:
@@ -57,6 +63,11 @@ class AttackImpactSprite(pygame.sprite.Sprite):
             return None
 
     def update(self):
+        self.step += 1
+        # impact = False
+        if self.step == self.schedule[0]:
+            self.target.take_damage(self.damage)
+            self.target.update_image()
         alpha = self.yield_next_alpha()
         # print(alpha)
         if alpha is not None:
@@ -64,46 +75,12 @@ class AttackImpactSprite(pygame.sprite.Sprite):
             pass
         else:
             self.kill()
+        # return impact
 
 
 elf_attack = AttackImpactSprite(attack_image_elf)
 orc_attack = AttackImpactSprite(attack_image_orc)
 
-
-
-class AttackAnimator:
-    def __init__(
-            self,
-            # attack_impact_location: pygame.Rect,
-            # attack_sprite: AttackImpactSprite = elf_attack,
-    ):
-        self.is_finished = False
-        self.step = 0
-        # self.attack_sprite = attack_sprite
-        # self.attack_impact_location = attack_impact_location
-
-    # def start_attack_animation(self):
-    #     attack_sprite = self.attack_sprite
-    #     attack_sprite.rect.center = get_random_point_in_rect(self.attack_impact_location)
-    #     return attack_sprite
-
-    def update(self):
-
-        # Wind up attack
-        impact = False
-
-        times = [20,120]
-
-        if self.step < times[0]:
-            pass
-        elif self.step == times[0]:
-            impact = True
-        elif self.step < times[1]:
-            pass
-        else:
-            self.is_finished = True
-        self.step += 1
-        return impact
 
 
 class Character(pygame.sprite.Sprite):
@@ -122,6 +99,7 @@ class Character(pygame.sprite.Sprite):
 
         # Initialize position
         self.rect = self.image.get_rect()
+        print(self.rect)
         self.position = pygame.Vector2(self.rect.topleft)
         self.randomize_location()
 
@@ -132,10 +110,11 @@ class Character(pygame.sprite.Sprite):
 
         # Initialize sprite state
         self.current_action = CharacterActions.IDLE
-        self.active_animator: Optional[AttackAnimator] = None
         self.target = None
         self.next_move = pygame.Vector2(0,0)
         self.last_move = pygame.Vector2(0,0)
+        self.attack_timer = 0
+        self.willingness_to_move = 1
 
         # Set attack image
         if self.stats is orc_stats:
@@ -143,7 +122,10 @@ class Character(pygame.sprite.Sprite):
         else:
             self.attack_image = elf_attack
 
-        self.collision_enabled = True
+    @property
+    def central_position(self):
+        return pygame.Vector2(self.rect.center)
+
 
     def load_image(self):
         self.image_raw = pygame.image.load(self.stats.image_loc).convert_alpha()
@@ -200,31 +182,60 @@ class Character(pygame.sprite.Sprite):
         if self.current_health <= 0:
             self.kill()
             return "dead"
-        if self.current_action == CharacterActions.ATTACKING:
-            impact = self.active_animator.update()
-            if impact:
-                return DamageAction(self, self.target)
-            if self.active_animator.is_finished:
-                self.current_action = CharacterActions.IDLE
-                self.active_animator = None
 
-            # else:
-            #     self.next_move = self.active_animator.attack_direction
-        else:
-            self.collision_enabled = True
-            self.current_action = CharacterActions.MOVING
+        # Handle attack
+        if self.current_action == CharacterActions.ATTACKING:
+            self.attack_timer += 1
+            if self.attack_timer<self.stats.attack_cooldown:
+                pass
+            else:
+                self.current_action = CharacterActions.IDLE
+                self.willingness_to_move = 1
+                self.attack_timer = 0
+
+        elif self.current_action == CharacterActions.IDLE:
+            if self.target is None:
+                pass
+            else:
+                self.current_action = CharacterActions.MOVING
+        elif self.current_action == CharacterActions.MOVING:
             if self.distance_from_target < 0.1:
                 self.current_action = CharacterActions.ATTACKING
-                # target_direction = pygame.Vector2(self.target.rect.topleft)-pygame.Vector2(self.rect.topleft)
-                self.active_animator = AttackAnimator()
-                self.collision_enabled = False
+                self.willingness_to_move = 0
                 self.last_move = pygame.Vector2(0,0)
                 self.next_move = pygame.Vector2(0,0)
-                return self.attack_image.create_new_instance(self.target.rect)
-                # return WeaponSwing(pygame.Vector2(self.rect.center), self.rect, self.target.position-self.position, self.stats.weapon)
+                return self.attack_image.create_new_instance(self.target.rect, self.target, self.stats.attack)
             else:
                 self.move_towards(self.target.rect)
         return None
+
+
+
+
+
+
+        # if self.current_action == CharacterActions.ATTACKING:
+        #     impact = self.active_animator.update()
+        #     if impact:
+        #         return DamageAction(self, self.target)
+        #     if self.active_animator.is_finished:
+        #         self.current_action = CharacterActions.IDLE
+        #         self.active_animator = None
+        #
+        #     # else:
+        #     #     self.next_move = self.active_animator.attack_direction
+        # else:
+        #     self.collision_enabled = True
+        #     self.current_action = CharacterActions.MOVING
+        #     if self.distance_from_target < 0.1:
+        #         self.current_action = CharacterActions.ATTACKING
+        #         self.collision_enabled = False
+        #         self.last_move = pygame.Vector2(0,0)
+        #         self.next_move = pygame.Vector2(0,0)
+        #         return self.attack_image.create_new_instance(self.target.rect)
+        #     else:
+        #         self.move_towards(self.target.rect)
+        # return None
 
 
 

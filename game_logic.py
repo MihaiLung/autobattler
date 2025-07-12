@@ -37,10 +37,11 @@ def resolve_collisions(group):
     for collision_group in collision_groups:
         for i, sprite in enumerate(collision_group[:-1]):
             for reference in collision_group[i+1:]:
-                linking_vector = sprite.position - reference.position
+                linking_vector = sprite.central_position - reference.central_position
                 overlap = -sprite_distance(reference, sprite)
                 if overlap > 0.05:
                     mass_ratio = sprite.stats.mass / reference.stats.mass
+                    mass_ratio = 1
                     if linking_vector.magnitude()>0:
                         # sprite_relative_willingness_to_move = 1
                         # if sprite.collision_enabled:
@@ -52,7 +53,7 @@ def resolve_collisions(group):
                         # reference.next_move -= separation_vector*mass_ratio*min(sprite_relative_willingness_to_move, 1)
 
                         def get_sprite_move_extent(s, ref):
-                            move_extent = 1 if s.collision_enabled else 0.000
+                            move_extent = s.willingness_to_move
                             return move_extent*4 if is_sprite_on_edge(ref) else move_extent
 
                         # sprite_move_extent = 1 if sprite.collision_enabled else 0.001

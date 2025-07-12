@@ -44,7 +44,7 @@ def sprite_distance(sprite1, sprite2):
     :return:
     """
     radii = (sprite1.radius + sprite2.radius) / 2
-    linking_vector = (sprite1.position - sprite2.position)
+    linking_vector = (sprite1.central_position - sprite2.central_position)
     return linking_vector.magnitude()-radii
 
 def get_colliding_sprites(target_rect: pygame.Rect, sprite_group: pygame.sprite.Group):
