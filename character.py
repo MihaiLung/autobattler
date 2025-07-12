@@ -99,7 +99,7 @@ class Character(pygame.sprite.Sprite):
 
         # Initialize position
         self.rect = self.image.get_rect()
-        print(self.rect)
+        # print(self.rect)
         self.position = pygame.Vector2(self.rect.topleft)
         self.randomize_location()
 
@@ -290,6 +290,11 @@ class Character(pygame.sprite.Sprite):
         if dist > 0.01:
             velocity = direction.normalize()*self.speed
             self.next_move = velocity
+
+    def draw(self, screen, centered_on):
+        draw_rect = self.rect.copy()
+        draw_rect.center = centered_on
+        screen.blit(self.image, draw_rect)
     #
     # def attack(self, target_rect: pygame.Rect):
     #     # Update character state to attacking
