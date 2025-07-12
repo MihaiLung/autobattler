@@ -1,8 +1,8 @@
-import pygame
-
 from character import DamageAction, AttackImpactSprite
-from effects import WeaponSwing
 from utils import get_all_quadrants, get_colliding_sprites, sprite_distance, is_sprite_on_edge
+from settings import *
+
+
 
 
 def get_attack_visuals(all_group):

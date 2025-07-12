@@ -11,10 +11,24 @@ from dataclasses import dataclass
 import numpy as np
 from effects import WeaponSwing
 
-from utils import sprite_distance, get_random_point_in_rect, yield_array_elements
+from utils import sprite_distance, get_random_point_in_rect, yield_array_elements, get_closest_target
 
 FONT = pygame.font.SysFont(None, int(30*SCALE))
 
+
+class CharacterGroup(pygame.sprite.Group):
+    def __init__(self):
+        super().__init__()
+
+    def set_targets(self, target_group):
+        pairings = {}
+        for s in self:
+            # Find t in target_group with min distance to s
+            s.set_target(get_closest_target(s, target_group))
+
+    def update_rect_position(self):
+        for s in self:
+            s.update_rect_position()
 
 class CharacterActions(enum.Enum):
     ATTACKING = "attacking"
