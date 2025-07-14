@@ -1,17 +1,16 @@
 import pygame
 
-from minions.minion_stats import elf_stats, orc_stats
+from character_settings.minion_stats import elf_stats, orc_stats
 from settings import *
 import random
-from minions.minion_base_class import MinionStats
+from character_settings.minion_base_class import MinionStats
 import math
 import enum
 from typing import Optional
 from dataclasses import dataclass
 import numpy as np
-from effects import WeaponSwing
 
-from utils import sprite_distance, get_random_point_in_rect, yield_array_elements, get_closest_target
+from logic.utils import sprite_distance, get_random_point_in_rect, yield_array_elements, get_closest_target
 
 FONT = pygame.font.SysFont(None, int(30*SCALE))
 
@@ -53,9 +52,9 @@ class AttackImpactSprite(pygame.sprite.Sprite):
         self.step = 0
 
         alphas = np.concat((
-            np.linspace(0, 254, schedule[0]),
-            np.linspace(254, 254, schedule[1]),
-            np.linspace(254, 0, schedule[2]),
+            np.linspace(0, 140, schedule[0]),
+            np.linspace(140, 140, schedule[1]),
+            np.linspace(140, 0, schedule[2]),
         ))
         self.iterator = yield_array_elements(alphas)
         self.target = target
@@ -115,10 +114,11 @@ class Character(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         # print(self.rect)
         self.position = pygame.Vector2(self.rect.topleft)
-        self.randomize_location()
+        # self.randomize_location()
 
         # Initialize sprite stats
         self.speed = stats.movement_speed*SCALE
+        self.starting_health = stats.health
         self.current_health = stats.health
         self.update_image()
 
@@ -135,6 +135,15 @@ class Character(pygame.sprite.Sprite):
             self.attack_image = orc_attack
         else:
             self.attack_image = elf_attack
+
+
+    def set_position_center(self, central_position: tuple[int, int]):
+        self.rect.center = central_position
+        self.position = pygame.Vector2(self.rect.topleft)
+
+    def set_position_topleft(self, topleft_position: tuple[int, int]):
+        self.rect.topleft = topleft_position
+        self.position = pygame.Vector2(self.rect.topleft)
 
     @property
     def central_position(self):
@@ -155,21 +164,38 @@ class Character(pygame.sprite.Sprite):
         return (int(quadrant_vector[0]), int(quadrant_vector[1]))
 
     def update_image(self):
-        # Create a fresh copy so we never draw over the original
+        # # Create a fresh copy so we never draw over the original
+        # self.image = self.image_raw.copy()
+        #
+        # # Prepare stat texts
+        # health_surf = FONT.render(str(self.current_health), True, (255, 0, 0))
+        # attack_surf = FONT.render(str(self.stats.attack), True, (0, 0, 0))
+        #
+        # # Position: health bottom-left, attack bottom-right
+        # health_pos = 3, self.image.get_height() - health_surf.get_height() - 3
+        # attack_pos = self.image.get_width() - attack_surf.get_width() - 3, \
+        #              self.image.get_height() - attack_surf.get_height() - 3
+        #
+        # # Overlay numbers
+        # self.image.blit(health_surf, health_pos)
+        # self.image.blit(attack_surf, attack_pos)
+
         self.image = self.image_raw.copy()
+        health_prop = self.current_health/self.starting_health
 
-        # Prepare stat texts
-        health_surf = FONT.render(str(self.current_health), True, (255, 0, 0))
-        attack_surf = FONT.render(str(self.stats.attack), True, (0, 0, 0))
+        bar_width = self.radius*0.9
+        bar_offset = self.radius*0.05
+        remaining_health_width = int(bar_width*health_prop)
+        remaining_health_rect = pygame.Rect(bar_offset, 0, remaining_health_width, 10*SCALE)
 
-        # Position: health bottom-left, attack bottom-right
-        health_pos = 3, self.image.get_height() - health_surf.get_height() - 3
-        attack_pos = self.image.get_width() - attack_surf.get_width() - 3, \
-                     self.image.get_height() - attack_surf.get_height() - 3
+        lost_health_width = int(bar_width*(1-health_prop))
+        lost_health_rect = pygame.Rect(remaining_health_width+bar_offset, 0, lost_health_width, 10*SCALE)
 
-        # Overlay numbers
-        self.image.blit(health_surf, health_pos)
-        self.image.blit(attack_surf, attack_pos)
+        pygame.draw.rect(self.image, 'green', remaining_health_rect)
+        pygame.draw.rect(self.image, 'red', lost_health_rect)
+
+
+
 
     def deal_damage(self, target: 'Character'):
         target.current_health -= self.stats.attack-target.stats.armour

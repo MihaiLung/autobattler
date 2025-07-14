@@ -1,5 +1,5 @@
 import pygame
-from minions.minion_stats import elf_stats
+from character_settings.minion_stats import elf_stats
 from settings import SCALE
 
 

@@ -1,4 +1,4 @@
-from minions.minion_base_class import MinionStats
+from character_settings.minion_base_class import MinionStats
 import pygame
 import os
 
@@ -18,24 +18,26 @@ elf_stats = MinionStats(
     size=100,
     health=30,
     armour=2,
-    attack=5,
+    attack=8,
     attack_speed=2,
     splash_limit=1,
-    movement_speed=10,
+    movement_speed=15,
     mass=100,
     image_loc="assets/elf.png",
+    attack_cooldown=30
     # weapon=sword_image,
 )
 
 orc_stats = MinionStats(
-    size=150,
-    health=100,
+    size=120,
+    health=200,
     armour=1,
     attack=40,
     attack_speed=3,
     splash_limit=1,
-    movement_speed=2,
-    mass=400,
+    movement_speed=3,
+    mass=200,
     image_loc="assets/orc.png",
+    attack_cooldown=120
     # weapon=pygame.transform.scale(axe_image,(200*SCALE,200*SCALE)),
 )

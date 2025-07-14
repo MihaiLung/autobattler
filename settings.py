@@ -1,3 +1,4 @@
+import enum
 import pygame
 
 
@@ -11,3 +12,8 @@ QUADRANT_SIZE = 400
 SCALE = 0.5
 
 FONT = pygame.font.SysFont(None, int(24*SCALE))
+
+class GameEvents(enum.Enum):
+    BattlePlanningDone = pygame.USEREVENT+1
+    BattleDone = pygame.USEREVENT+2
+    RestartGame = pygame.USEREVENT+3

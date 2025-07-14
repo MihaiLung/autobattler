@@ -1,5 +1,5 @@
-from character import DamageAction, AttackImpactSprite
-from utils import get_all_quadrants, get_colliding_sprites, sprite_distance, is_sprite_on_edge
+from battle.character import DamageAction, AttackImpactSprite
+from logic.utils import get_all_quadrants, get_colliding_sprites, sprite_distance, is_sprite_on_edge
 from settings import *
 
 
