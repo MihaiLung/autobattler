@@ -29,7 +29,7 @@ class MouseManager:
         y = int(min(self.click_pos[1], pos[1]))
         width = abs(self.click_pos[0]-pos[0])
         height = abs(self.click_pos[1]-pos[1])
-        print(pygame.Rect(x, y, width, height))
+        # print(pygame.Rect(x, y, width, height))
         return pygame.Rect(x, y, width, height)
 
     def click(self, character: Optional[Character] = None, team: Optional[CharacterGroup] = None):

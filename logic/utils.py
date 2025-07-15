@@ -6,8 +6,7 @@ import random
 
 
 def get_closest_target(s, target_group):
-    return min(target_group,
-                        key=lambda t: (s.rect.centerx - t.rect.centerx) ** 2 + (s.rect.centery - t.rect.centery) ** 2)
+    return min(target_group, key=lambda t: (s.rect.centerx - t.rect.centerx) ** 2 + (s.rect.centery - t.rect.centery) ** 2)
 
 
 def yield_array_elements(arr):
@@ -50,7 +49,7 @@ def sprite_distance(sprite1, sprite2):
     :return:
     """
     radii = (sprite1.radius + sprite2.radius) / 2
-    linking_vector = (sprite1.central_position - sprite2.central_position)
+    linking_vector = (sprite1.central_position_for_collision - sprite2.central_position_for_collision)
     return linking_vector.magnitude()-radii
 
 def get_colliding_sprites(target_rect: pygame.Rect, sprite_group: pygame.sprite.Group):

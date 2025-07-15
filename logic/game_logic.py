@@ -1,4 +1,4 @@
-from battle.character import DamageAction, AttackImpactSprite
+from battle.character import DamageAction#, AttackImpactSprite
 from logic.utils import get_all_quadrants, get_colliding_sprites, sprite_distance, is_sprite_on_edge
 from settings import *
 
@@ -21,76 +21,61 @@ def update_group_states(friends, enemies, attack_animations):
             # Resolve damage
             char.deal_damage(char.target)
             char.target.update_image()
-        elif type(game_action) == AttackImpactSprite:
-            attack_animations.add(game_action)
+        # elif type(game_action) == AttackImpactSprite:
+        #     attack_animations.add(game_action)
         elif game_action == "dead":
             need_refresh_targets = True
     if need_refresh_targets:
-        enemies.set_targets(friends)
+        end_game = False
+        if min(len(friends), len(enemies)) == 0:
+            pygame.event.post(pygame.event.Event(GameEvents.BattleDone.value))
+        else:
+            enemies.set_targets(friends)
+            friends.set_targets(enemies)
 
 
-def resolve_collisions(group):
+def get_sprite_move_extent(s, ref):
+    move_extent = s.willingness_to_move
+    return move_extent * 4 if is_sprite_on_edge(ref) else move_extent
+
+
+def resolve_collisions(allies_group, enemy_group):
+
+    collision_group = pygame.sprite.Group()
+    collision_group.add(allies_group.sprites())
+    collision_group.add(enemy_group.sprites())
+
     collision_groups = []
     quadrants = get_all_quadrants()
     for quadrant in quadrants:
-        collision_groups.append(get_colliding_sprites(quadrant, group))
+        collision_groups.append(get_colliding_sprites(quadrant, collision_group))
     for collision_group in collision_groups:
+        collision_group.sort(key=lambda x: x.collision_resolution_priority)
         for i, sprite in enumerate(collision_group[:-1]):
             for reference in collision_group[i+1:]:
-                linking_vector = sprite.central_position - reference.central_position
+                linking_vector = sprite.central_position_for_collision - reference.central_position_for_collision
                 overlap = -sprite_distance(reference, sprite)
                 if overlap > 0.05:
-                    mass_ratio = sprite.stats.mass / reference.stats.mass
-                    mass_ratio = 1
-                    if linking_vector.magnitude()>0:
-                        # sprite_relative_willingness_to_move = 1
-                        # if sprite.collision_enabled:
-                        #     sprite_relative_willingness_to_move *=
-                        # if reference.collision_enabled:
-                        #     sprite_relative_willingness_to_move /= 1
-                        # separation_vector = linking_vector.clamp_magnitude(overlap)
-                        # sprite.next_move += separation_vector/mass_ratio*min(1/sprite_relative_willingness_to_move, 1)
-                        # reference.next_move -= separation_vector*mass_ratio*min(sprite_relative_willingness_to_move, 1)
+                    separation_vector = linking_vector.clamp_magnitude(overlap)
+                    # If enemies, fully repulse everytime
+                    if (sprite in allies_group) and (reference not in allies_group):
+                        sprite.next_move += separation_vector/2*get_sprite_move_extent(sprite, reference)
+                        reference.next_move -= separation_vector/2*get_sprite_move_extent(reference, sprite)
 
-                        def get_sprite_move_extent(s, ref):
-                            move_extent = s.willingness_to_move
-                            return move_extent*4 if is_sprite_on_edge(ref) else move_extent
-
-                        # sprite_move_extent = 1 if sprite.collision_enabled else 0.001
-                        # reference_move_extent = 1 if reference.collision_enabled else 0.001
-                        separation_vector = linking_vector.clamp_magnitude(overlap)
-                        sprite.next_move += separation_vector/mass_ratio*get_sprite_move_extent(sprite, reference)
-                        reference.next_move -= separation_vector*mass_ratio*get_sprite_move_extent(reference, sprite)
-
-                        # # If one or both of the sprites are stuck on the corner, significantly increase the force to declump corners
-                        # if is_sprite_on_edge(sprite):
-                        #     if reference.collision_enabled:
-                        #         reference.next_move -= 4*separation_vector
-                        #     if sprite.collision_enabled:
-                        #         sprite.next_move += 4*separation_vector
-                        # if is_sprite_on_edge(reference):
-                        #     if reference.collision_enabled:
-                        #         reference.next_move -= 4*separation_vector
-                        #     if sprite.collision_enabled:
-                        #         sprite.next_move += 4*separation_vector
-
-
+                    # Between allies
+                    else:
+                        # # If sprite is battling, re-angle move to go around
+                        # if get_sprite_move_extent(sprite, reference):
+                        #     new_move_direction = separation_vector.rotate(90)
+                        #     if 90<new_move_direction.angle_to(reference.next_move)<270:
                         #
-                        # separation_vector = linking_vector.clamp_magnitude(overlap)
-                        # if sprite.collision_enabled:
-                        #     sprite.next_move += separation_vector/mass_ratio
-                        # if reference.collision_enabled:
-                        #     reference.next_move -= separation_vector*mass_ratio
-                        #
-                        # # If one or both of the sprites are stuck on the corner, significantly increase the force to declump corners
-                        # if is_sprite_on_edge(sprite):
-                        #     if reference.collision_enabled:
-                        #         reference.next_move -= 4*separation_vector
-                        #     if sprite.collision_enabled:
-                        #         sprite.next_move += 4*separation_vector
-                        # if is_sprite_on_edge(reference):
-                        #     if reference.collision_enabled:
-                        #         reference.next_move -= 4*separation_vector
-                        #     if sprite.collision_enabled:
-                        #         sprite.next_move += 4*separation_vector
-                        #
+
+
+
+                        reference.next_move -= separation_vector*get_sprite_move_extent(reference, sprite)
+
+                    # Between fwends, give priority to closer lad (sprite):
+                    # if linking_vector.magnitude()>0:
+                    #     separation_vector = linking_vector.clamp_magnitude(overlap)
+                    #     sprite.next_move += separation_vector*get_sprite_move_extent(sprite, reference)
+                    #     reference.next_move -= separation_vector*get_sprite_move_extent(reference, sprite)

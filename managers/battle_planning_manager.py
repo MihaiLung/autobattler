@@ -57,15 +57,16 @@ class BattlePlanningManager:
                             self.mouse_manager.click(ui.buttons[button_index].creature, ui.team)
                             clicked = True
                     if self.planning_done_button.rect.collidepoint(mouse_pos):
-                        self.planning_done_button.button_press()
+                        if len(self.allied_group.sprites())>0 and len(self.enemy_group.sprites())>0:
+                            self.planning_done_button.button_press()
                         clicked = True
                     if not clicked:
                         self.mouse_manager.click()
             elif event.type == pygame.MOUSEBUTTONUP:
                 self.mouse_manager.unclick()
 
-        for ui in self.all_ui_instances:
-            ui.draw(self.screen)
+        # for ui in self.all_ui_instances:
+        #     ui.draw(self.screen)
 
         # self.mouse_manager.hover(self.screen)
         self.draw()

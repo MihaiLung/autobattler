@@ -23,12 +23,22 @@ class BattleManager:
         self.screen.blit(self.background, (0, 0))
         self.enemy_group.draw(self.screen)
         self.allied_group.draw(self.screen)
+
+        # for sprite in self.collision_group.sprites():
+        #     pygame.draw.circle(
+        #         self.screen,
+        #         "red",
+        #         (int(sprite.central_position_for_collision[0]), int(sprite.central_position_for_collision[1])),
+        #         int(sprite.radius*1.2/2),
+        #         width=int(sprite.radius*0.2)
+        #     )
+
         self.attack_animations.draw(self.screen)
 
 
     def update(self):
 
-        try:
+        # try:
             self.refresh_targets_timer += 1
             if self.refresh_targets_timer > 120:
                 refresh_targets_timer = 0
@@ -40,14 +50,16 @@ class BattleManager:
             update_group_states(self.allied_group, self.enemy_group, self.attack_animations)
 
             # Collision
-            resolve_collisions(self.collision_group)
+            resolve_collisions(self.allied_group, self.enemy_group)
 
             self.enemy_group.update_rect_position()
             self.allied_group.update_rect_position()
             self.attack_animations.update()
             self.draw()
-        except ValueError:
-            pygame.event.post(pygame.event.Event(GameEvents.BattleDone.value))
+
+
+        # except ValueError:
+        #     pygame.event.post(pygame.event.Event(GameEvents.BattleDone.value))
 
 
 
