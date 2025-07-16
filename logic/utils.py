@@ -6,7 +6,10 @@ import random
 
 
 def get_closest_target(s, target_group):
-    return min(target_group, key=lambda t: (s.rect.centerx - t.rect.centerx) ** 2 + (s.rect.centery - t.rect.centery) ** 2)
+    if len(target_group) == 0:
+        return None
+    else:
+        return min(target_group, key=lambda t: (s.rect.centerx - t.rect.centerx) ** 2 + (s.rect.centery - t.rect.centery) ** 2)
 
 
 def yield_array_elements(arr):

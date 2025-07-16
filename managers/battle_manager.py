@@ -3,6 +3,14 @@ from logic.game_logic import update_group_states, resolve_collisions
 from battle.character import CharacterGroup
 # from user_interface import UIButtons
 
+class AttackAnimations(pygame.sprite.Group):
+    def __init__(self):
+        super().__init__()
+
+    def draw(self, surface: pygame.Surface):
+        for sprite in self.sprites():
+            sprite.draw(surface)
+
 class BattleManager:
     def __init__(self, allied_group, enemy_group, screen):
         self.allied_group = allied_group
@@ -17,12 +25,17 @@ class BattleManager:
         self.refresh_targets_timer = 120
         background = pygame.image.load("assets/background.jpg")
         self.background = pygame.transform.scale(background, (WIDTH, HEIGHT))
-        self.attack_animations = pygame.sprite.Group()
+        self.attack_animations = AttackAnimations()
 
     def draw(self):
         self.screen.blit(self.background, (0, 0))
         self.enemy_group.draw(self.screen)
         self.allied_group.draw(self.screen)
+
+        # font = pygame.font.SysFont("comicsans", 20)
+        # for sprite in self.collision_group.sprites():
+        #     text = font.render(str(round(sprite.collision_resolution_priority,0)), 0, "black")
+        #     self.screen.blit(text, (sprite.rect.x, sprite.rect.y))
 
         # for sprite in self.collision_group.sprites():
         #     pygame.draw.circle(
@@ -40,7 +53,7 @@ class BattleManager:
 
         # try:
             self.refresh_targets_timer += 1
-            if self.refresh_targets_timer > 120:
+            if (self.refresh_targets_timer > 120):
                 refresh_targets_timer = 0
                 self.enemy_group.set_targets(self.allied_group)
                 self.allied_group.set_targets(self.enemy_group)
@@ -55,8 +68,11 @@ class BattleManager:
             self.enemy_group.update_rect_position()
             self.allied_group.update_rect_position()
             self.attack_animations.update()
+
             self.draw()
 
+            if min(len(self.enemy_group), len(self.allied_group)) == 0:
+                pygame.event.post(pygame.event.Event(GameEvents.BattleDone.value))
 
         # except ValueError:
         #     pygame.event.post(pygame.event.Event(GameEvents.BattleDone.value))
