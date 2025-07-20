@@ -1,14 +1,11 @@
-import pygame
-
 from settings import *
-from battle.character import Character, CharacterGroup
-from character_settings.minion_stats import *
+from battle_logic.battle.character import Character, CharacterGroup
+from battle_logic.character_settings.minion_stats import *
 from settings import WIDTH
-from typing import Tuple, Callable
 
 
 class CreatureSummonButton(pygame.sprite.Sprite):
-    def __init__(self, creature: Character):
+    def __init__(self, creature):
         pygame.sprite.Sprite.__init__(self)
         self.creature = creature.copy()
         self.creature_icon = creature.copy()

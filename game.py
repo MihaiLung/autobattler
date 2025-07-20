@@ -1,20 +1,22 @@
-import enum
-
 from settings import *
 
 pygame.init()
 screen = pygame.display.set_mode((WIDTH, HEIGHT) )
 
-from managers.battle_planning_manager import BattlePlanningManager
+from battle_logic.managers.battle_planning_manager import BattlePlanningManager
 from sys import exit
-from managers.battle_manager import BattleManager
+from battle_logic.managers.battle_manager import BattleManager
 from user_interface import Button
-from battle.character import Character, CharacterGroup
-from character_settings.minion_stats import elf_stats, orc_stats
-from managers.mouse_manager import MouseManager
+from battle_logic.battle.character import Character, CharacterGroup
+from battle_logic.character_settings.minion_stats import elf_stats, orc_stats
 
-from logic.utils import *
+from battle_logic.logic.utils import *
 
+
+class GameState(enum.Enum):
+    BATTLE_PREP='battle_prep',
+    BATTLE='battle',
+    BATTLE_OUTCOME_SCREEN='battle_outcome_screen',
 
 pygame.display.set_caption("World of VAVAVAVA")
 clock = pygame.time.Clock()
@@ -22,59 +24,17 @@ clock = pygame.time.Clock()
 
 camera = pygame.sprite.Group()
 
-# def get_closest_target(s, target_group):
-#     return min(target_group,
-#                         key=lambda t: (s.rect.centerx - t.rect.centerx) ** 2 + (s.rect.centery - t.rect.centery) ** 2)
-
-# class CharacterGroup(pygame.sprite.Group):
-#     def __init__(self):
-#         super().__init__()
-#
-#     def set_targets(self, target_group):
-#         pairings = {}
-#         for s in self:
-#             # Find t in target_group with min distance to s
-#             s.set_target(get_closest_target(s, target_group))
-#
-#     def update_rect_position(self):
-#         for s in self:
-#             s.update_rect_position()
-
 orc_group = CharacterGroup()
 elf_group = CharacterGroup()
 all_group = CharacterGroup()
 
 attack_animations = pygame.sprite.Group()
 
-# num_orcs = 50
-# num_elfs = 100
 proto_orc = Character(orc_stats)
 proto_elf = Character(elf_stats)
 
-# for _ in range(random.randint(num_orcs//2,num_orcs)):
-#     new_orc = proto_orc.copy()
-#     orc_group.add(new_orc)
-#     all_group.add(new_orc)
-# for _ in range(random.randint(num_elfs//2,num_elfs)):
-#     new_elf = proto_elf.copy()
-#     elf_group.add(new_elf)
-#     all_group.add(new_elf)
-
-
-# orc_group.set_targets(elf_group)
-# elf_group.set_targets(orc_group)
-
-# refresh_targets_timer = 0
-#
 
 battle_planning_manager = BattlePlanningManager([proto_elf], [proto_orc], screen)
-# battle_manager = BattleManager(elf_group, orc_group, screen)
-
-class GameState(enum.Enum):
-    BATTLE_PREP='battle_prep',
-    BATTLE='battle',
-    BATTLE_OUTCOME_SCREEN='battle_outcome_screen',
-
 game_state = GameState.BATTLE_PREP
 
 

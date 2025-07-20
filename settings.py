@@ -17,3 +17,6 @@ class GameEvents(enum.Enum):
     BattlePlanningDone = pygame.USEREVENT+1
     BattleDone = pygame.USEREVENT+2
     RestartGame = pygame.USEREVENT+3
+
+
+CHUNK_SIZE = 1000
