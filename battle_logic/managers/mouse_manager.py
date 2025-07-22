@@ -10,6 +10,7 @@ class MouseStates(enum.Enum):
     SPAWNING="spawning"
 
 
+
 class MouseManager:
     SPAWN_COOLDOWN = 20
     BRIGHT_GREEN = (0, 255, 0)
@@ -52,7 +53,6 @@ class MouseManager:
         self.team.add(new_char)
 
     def unclick(self):
-        self.spawn_timer = 0
         if self.state == MouseStates.SPAWNING:
             for pos in self.character_positions:
                 self.spawn_character_at_pos(pos)

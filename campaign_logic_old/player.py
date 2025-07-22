@@ -10,10 +10,10 @@ class Player(pygame.sprite.Sprite):
         self.image.set_colorkey((0, 0, 0))
         self.image = pygame.transform.scale(self.image, (100,100))
         self.position = pygame.Vector2(0,0)
-        self.rect = self.image.get_rect()
+        self.rect = self.image.get_rect(center=(int(WIDTH//2), int(HEIGHT//2)))
         self.update_rect()
 
-        self.speed = 15
+        self.speed = 40
         self.position = pygame.Vector2(0,0)
         self.facing_right = True
         self.level=4

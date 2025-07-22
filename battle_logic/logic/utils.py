@@ -4,6 +4,8 @@ from settings import *
 from typing import List
 import random
 
+def vector_to_integer_tuple(vector: pygame.Vector2) -> tuple[int, int]:
+    return int(vector.x), int(vector.y)
 
 def get_closest_target(s, target_group):
     if len(target_group) == 0:
@@ -81,8 +83,8 @@ def get_all_quadrants(width=WIDTH, height=HEIGHT) -> List[pygame.Rect]:
     while left<width:
         top = 0
         while top<height:
-            quadrants.append(pygame.Rect(left, top, QUADRANT_SIZE, QUADRANT_SIZE))
-            top += QUADRANT_SIZE
-        left += QUADRANT_SIZE
+            quadrants.append(pygame.Rect(left, top, COLLISION_QUADRANT_SIZE, COLLISION_QUADRANT_SIZE))
+            top += COLLISION_QUADRANT_SIZE
+        left += COLLISION_QUADRANT_SIZE
 
     return quadrants

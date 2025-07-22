@@ -2,12 +2,16 @@ import pygame
 import enum
 from typing import Optional, Tuple, List
 from battle_logic.battle.character import Character, CharacterGroup
+from battle_logic.logic.utils import vector_to_integer_tuple
 from campaign_logic.buildings import Building
+from campaign_logic.player import Player
+from settings import *
+
 
 
 class CampaignMouseStates(enum.Enum):
     EMPTY="empty"
-    PLANNING_BUILDING="holding"
+    HOLDING="holding"
     SPAWNING="spawning"
 
 
@@ -16,24 +20,33 @@ class CampaignMouseManager:
     SOFT_TRANSPARENT_GREEN = (144, 238, 144, 90)
 
 
-    def __init__(self):
+    def __init__(self, player: Player):
         self.state = CampaignMouseStates.EMPTY
-        self.building: Optional[Building] = None
+        self.selected_building: Optional[Building] = None
         self.spawn_timer = 0
         self.click_pos = Tuple[int,int]
         self.character_positions: List[Tuple[int,int]] = []
+        self.player = player
 
-    def click(self, building: Optional[Building] = None, team: Optional[CharacterGroup] = None):
+    @property
+    def tile_size(self):
+        return int(CAMPAIGN_TILE_SIZE*SCALE)
+
+    def click(self, newly_selected_building: Optional[Building] = None):
         # If pressed outside UI:
-        if building is None:
-            if self.building is not None:
-                self.state = CampaignMouseStates.PLANNING_BUILDING
-
-        # If pressed in UI
+        if newly_selected_building is None:
+            # If holding a building, start a-building
+            if self.selected_building is not None:
+                # return self.selected_building.copy()
+                self.state = CampaignMouseStates.SPAWNING
+                print("SPAWNOCLOCK")
+            # Otherwise, pass
+            else:
+                pass
+        # If pressed in UI, select new building
         else:
-            self.state = CampaignMouseStates.PLANNING_BUILDING
-            self.building = building.copy()
-            self.team = team
+            self.state = CampaignMouseStates.HOLDING
+            self.selected_building = newly_selected_building.copy()
 
         self.click_pos = pygame.mouse.get_pos()
 
@@ -43,48 +56,21 @@ class CampaignMouseManager:
         self.team.add(new_char)
 
     def unclick(self):
-        self.spawn_timer = 0
-        if self.state == MouseStates.SPAWNING:
-            for pos in self.character_positions:
-                self.spawn_character_at_pos(pos)
-            self.character_positions = []
-            self.state = MouseStates.EMPTY
+        if self.state == CampaignMouseStates.SPAWNING:
+            self.state = CampaignMouseStates.HOLDING
 
-    def hover(self, screen: pygame.Surface):
+    def hover(self, screen: pygame.Surface, hover_tile: tuple[int, int], offset: Tuple[int,int], buildings: pygame.sprite.Group):
         # Always display the character under the mouse, if it's selected
-        if self.character is not None:
-            self.character.draw(screen, pygame.mouse.get_pos())
-
-        # If the mouse is in spawning mode, draw formations (eg - behaviour after clicking and before releasing)
-        if self.state == MouseStates.SPAWNING:
-            selection_rect = self.get_selection_rect(pygame.mouse.get_pos())
-
-            self.character_positions = []
-            char_side_length = self.character.radius
-            for i in range(int(selection_rect.width//char_side_length)):
-                for j in range(int(selection_rect.height//char_side_length)):
-                    x = i*char_side_length+selection_rect.x
-                    y = j*char_side_length+selection_rect.y
-                    self.character_positions.append((x, y))
-                    screen.blit(self.character.image, (x, y))
-
-
-            transparent_surface = pygame.Surface((selection_rect.width, selection_rect.height), pygame.SRCALPHA)
-            transparent_surface.fill(MouseManager.SOFT_TRANSPARENT_GREEN)
-            screen.blit(transparent_surface, (selection_rect.x, selection_rect.y))
-
-
-            pygame.draw.rect(
-                screen,
-                rect=selection_rect,
-                color=MouseManager.BRIGHT_GREEN,
-                width=8
-            )
-
-
-            # if self.spawn_timer == 0:
-            #     new_char = self.character.copy()
-            #     new_char.set_position_center(pygame.mouse.get_pos())
-            #     self.team.add(new_char)
-            #     self.spawn_timer = MouseManager.SPAWN_COOLDOWN
-            # self.spawn_timer -= 1
+        if self.selected_building is not None:
+            self.selected_building.draw(screen, hover_tile)
+        if self.state == CampaignMouseStates.SPAWNING:
+            print('2')
+            map_pos = pygame.Vector2(hover_tile)+offset
+            free = True
+            for sprite in buildings:
+                if sprite.rect.collidepoint(map_pos):
+                    free = False
+            if free:
+                print("HENLO")
+                return self.selected_building.copy()
+        return None

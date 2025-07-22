@@ -5,9 +5,9 @@ import pygame
 pygame.init()
 WIDTH, HEIGHT = 1600, 900
 
-UI_BUTTON_SIZE = 200
+UI_BUTTON_SIZE = 100
 
-QUADRANT_SIZE = 200
+COLLISION_QUADRANT_SIZE = 200
 
 SCALE = 0.5
 
@@ -20,3 +20,4 @@ class GameEvents(enum.Enum):
 
 
 CHUNK_SIZE = 1000
+CAMPAIGN_TILE_SIZE = 50

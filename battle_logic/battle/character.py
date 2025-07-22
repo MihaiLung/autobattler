@@ -164,7 +164,7 @@ class Character(pygame.sprite.Sprite):
         return Character(self.stats, self.image_raw.copy())
 
     def get_quadrant(self):
-        quadrant_vector = pygame.Vector2(self.rect.center)/QUADRANT_SIZE
+        quadrant_vector = pygame.Vector2(self.rect.center) / COLLISION_QUADRANT_SIZE
         return (int(quadrant_vector[0]), int(quadrant_vector[1]))
 
     def update_image(self):

@@ -33,8 +33,8 @@ class BuildingUI(pygame.sprite.Sprite):
 
     def compile_ui_buttons(self):
         left_offset = 0
-        width = UI_BUTTON_SIZE*len(self.buttons)
-        self.image = pygame.Surface((width, UI_BUTTON_SIZE))
+        width = UI_BUTTON_SIZE*SCALE*len(self.buttons)
+        self.image = pygame.Surface((width, UI_BUTTON_SIZE*SCALE))
         self.image.fill('white')
         for button in self.buttons:
             print(button)

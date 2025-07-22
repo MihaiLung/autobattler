@@ -11,7 +11,6 @@ class Building(pygame.sprite.Sprite):
         if not size:
             size = CAMPAIGN_TILE_SIZE*SCALE
         self.load_image(size)
-        self.level=100
 
     def load_image(self, size):
         self.image = pygame.image.load("../assets/magical_conveyor.png")

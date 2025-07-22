@@ -99,6 +99,7 @@ class BackgroundChunks(pygame.sprite.Sprite):
     def refresh_background(self):
         chunks_to_render = self.coords_of_chunks_to_render_at_current_position()
         min_x, min_y = chunks_to_render[0]
+        print(chunks_to_render[0])
         for chunk_coords in chunks_to_render:
             if chunk_coords not in self.chunks:
                 self.chunks[chunk_coords] = BackgroundChunk()
