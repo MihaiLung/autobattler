@@ -40,12 +40,8 @@ while True:
             sys.exit()
         if event.type == pygame.MOUSEBUTTONDOWN:
             if event.button == 1:
-                if active_window is not None:
-                    if active_window.rect.collidepoint(pygame.mouse.get_pos()):
-                        mouse_manager.register_clicked_object(active_window, pygame.mouse.get_pos())
-                    else:
-                        active_window = None
-                        mouse_manager.reset_clicked_object()
+                if spr.rect.collidepoint(pygame.mouse.get_pos()):
+
 
         if event.type == pygame.MOUSEBUTTONUP:
             mouse_manager.reset_clicked_object()
