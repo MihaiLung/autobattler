@@ -1,7 +1,8 @@
 from battle_logic.managers.mouse_manager import MouseManager
 from settings import *
-from battle_logic.battle.character import Character, CharacterGroup
-from user_interface import CreatureSummonUI, Button
+from battle_logic.character import Character, CharacterGroup
+from ui.sprite_summon_menu import SpriteSummonUI
+from ui.buttons import Button
 from typing import List
 
 
@@ -17,13 +18,13 @@ class BattlePlanningManager:
         self.allied_group = CharacterGroup()
         self.enemy_group = CharacterGroup()
 
-        self.ui_allied = CreatureSummonUI(self.allied_group)
+        self.ui_allied = SpriteSummonUI(self.allied_group)
         for creature in allied_character_options:
-            self.ui_allied.create_button_for_creature_summon(creature)
+            self.ui_allied.create_button_for_sprite_generation(creature)
 
-        self.ui_enemy = CreatureSummonUI(self.enemy_group)
+        self.ui_enemy = SpriteSummonUI(self.enemy_group)
         for creature in enemy_character_options:
-            self.ui_enemy.create_button_for_creature_summon(creature)
+            self.ui_enemy.create_button_for_sprite_generation(creature)
 
         self.all_ui_instances = [self.ui_allied, self.ui_enemy]
         for ui in self.all_ui_instances:
@@ -52,9 +53,9 @@ class BattlePlanningManager:
                     clicked = False
                     for ui in self.all_ui_instances:
                         if ui.rect.collidepoint(mouse_pos):
-                            relative_mouse_loc = pygame.Vector2(mouse_pos) - pygame.Vector2(ui.rect.topleft)
-                            button_index = int(relative_mouse_loc[0] // (UI_BUTTON_SIZE * SCALE))
-                            self.mouse_manager.click(ui.buttons[button_index].creature, ui.team)
+                            # relative_mouse_loc = pygame.Vector2(mouse_pos) - pygame.Vector2(ui.rect.topleft)
+                            # button_index = int(relative_mouse_loc[0] // (UI_BUTTON_SIZE))
+                            self.mouse_manager.click(ui.get_button_at_mouse_position().proto_sprite, ui.team)
                             clicked = True
                     if self.planning_done_button.rect.collidepoint(mouse_pos):
                         if len(self.allied_group.sprites())>0 and len(self.enemy_group.sprites())>0:

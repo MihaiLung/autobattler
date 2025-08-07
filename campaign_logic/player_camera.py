@@ -27,7 +27,7 @@ class PlayerCamera(pygame.sprite.Group):
             # if sprite is self.player:
             if sprite is self.player:
                 sprite.rect.center = (int(WIDTH / 2), int(HEIGHT / 2))
-                screen.blit(sprite.image, PlayerCamera.SCREEN_CENTER)
+                screen.blit(sprite.image, sprite.rect)
             else:
                 if isinstance(sprite, pygame.sprite.Group):
                     for s in sprite:

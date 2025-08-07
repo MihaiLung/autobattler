@@ -1,19 +1,20 @@
-import pygame
-import enum
 from typing import Optional, Tuple, List
-from battle_logic.battle.character import Character, CharacterGroup
-from battle_logic.logic.utils import vector_to_integer_tuple
 from campaign_logic.buildings import Building
 from campaign_logic.player import Player
 from settings import *
 
+# from campaign_logic.buildings import ConveyorRotations
 
+# class RKeyRotations(enum.Enum):
+#     ConveyorRotations.LEFT = ConveyorRotations.DOWN
+#     ConveyorRotations.DOWN = ConveyorRotations.RIGHT
+#     ConveyorRotations.RIGHT = ConveyorRotations.UP
+#     ConveyorRotations.UP = ConveyorRotations.LEFT
 
 class CampaignMouseStates(enum.Enum):
     EMPTY="empty"
     HOLDING="holding"
     SPAWNING="spawning"
-
 
 class CampaignMouseManager:
     BRIGHT_GREEN = (0, 255, 0)
@@ -39,7 +40,6 @@ class CampaignMouseManager:
             if self.selected_building is not None:
                 # return self.selected_building.copy()
                 self.state = CampaignMouseStates.SPAWNING
-                print("SPAWNOCLOCK")
             # Otherwise, pass
             else:
                 pass
@@ -60,17 +60,19 @@ class CampaignMouseManager:
             self.state = CampaignMouseStates.HOLDING
 
     def hover(self, screen: pygame.Surface, hover_tile: tuple[int, int], offset: Tuple[int,int], buildings: pygame.sprite.Group):
-        # Always display the character under the mouse, if it's selected
+        # Always display the sprite under the mouse, if it's selected
         if self.selected_building is not None:
             self.selected_building.draw(screen, hover_tile)
+
+        # If a sprite is selected and in spawning mode,
         if self.state == CampaignMouseStates.SPAWNING:
-            print('2')
             map_pos = pygame.Vector2(hover_tile)+offset
             free = True
             for sprite in buildings:
                 if sprite.rect.collidepoint(map_pos):
                     free = False
+                    print("NO ME GUSTA >:(")
             if free:
-                print("HENLO")
+                print("HELLO LADIES ;)")
                 return self.selected_building.copy()
         return None

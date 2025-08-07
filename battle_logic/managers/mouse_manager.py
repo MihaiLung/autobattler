@@ -1,7 +1,7 @@
 import pygame
 import enum
 from typing import Optional, Tuple, List
-from battle_logic.battle.character import Character, CharacterGroup
+from battle_logic.character import Character, CharacterGroup
 
 
 class MouseStates(enum.Enum):

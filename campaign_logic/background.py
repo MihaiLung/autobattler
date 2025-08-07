@@ -3,14 +3,16 @@ import math
 import pygame
 import random
 
-from settings import CHUNK_SIZE
-from campaign_logic.settlement import Settlement, orc_settlement, elf_settlement, Shadow
+from settings import CHUNK_SIZE, CAMPAIGN_GRASS_SIZE, CampaignDisplayZ, CAMPAIGN_TILE_SIZE, HEIGHT, WIDTH
+from campaign_logic.settlement import orc_settlement, elf_settlement, Shadow
 
 
 def read_in_image(loc):
     image = pygame.image.load(loc).convert_alpha()
     max_side = max(image.get_width(), image.get_height())
-    image = pygame.transform.smoothscale(image, (image.get_width() / max_side * 100, image.get_height() / max_side * 100))
+    image = pygame.transform.smoothscale(
+        image,
+        (image.get_width() / max_side * CAMPAIGN_GRASS_SIZE, image.get_height() / max_side * CAMPAIGN_GRASS_SIZE))
     return image
 
 
@@ -23,7 +25,7 @@ class Grass(pygame.sprite.Sprite):
         pygame.sprite.Sprite.__init__(self)
         self.image = random.choice(self.GRASS_OPTIONS)
         self.rect = self.image.get_rect()
-        self.level = 2
+        self.level = CampaignDisplayZ.grass.value
         self.chunk_location: pygame.Vector2 = pygame.Vector2(0,0)
 
     def randomize_chunk_location(self, width, height):
@@ -39,16 +41,14 @@ class BackgroundChunk(pygame.sprite.Sprite):
     SETTLEMENTS = [orc_settlement, elf_settlement]
     def __init__(self):
         pygame.sprite.Sprite.__init__(self)
-        self.image = pygame.Surface((1000, 1000))
+        self.image = pygame.Surface((CHUNK_SIZE, CHUNK_SIZE))
         self.image.fill(BackgroundChunk.GREEN)
         self.rect = self.image.get_rect()
-        # self.add_grass(random.randint(15,30))
         self.settlement = None
-        self.level = 1
 
         self.initialize()
 
-    def initialize(self):
+    def initialize(self, show_gridlines=True):
         # Small chance of settlement
         if random.random() < 0.1:
             self.add_grass(random.randint(2, 5))
@@ -58,6 +58,14 @@ class BackgroundChunk(pygame.sprite.Sprite):
             self.image.blit(self.settlement.image, (300, 300))
         else:
             self.add_grass(random.randint(15, 30))
+
+        if show_gridlines:
+            tiles_per_chunk = int(CHUNK_SIZE / CAMPAIGN_TILE_SIZE)
+            for x in range(tiles_per_chunk):
+                offset = CAMPAIGN_TILE_SIZE * x
+                pygame.draw.line(self.image, "darkgrey", (offset, 0), (offset, CHUNK_SIZE), 3)
+                pygame.draw.line(self.image, "darkgrey", (0, offset), (CHUNK_SIZE, offset), 3)
+
 
     def add_grass(self, num_grass):
         grasses = []
@@ -70,7 +78,7 @@ class BackgroundChunk(pygame.sprite.Sprite):
             self.image.blit(grass.image, grass.chunk_location)
 
 
-def vector_to_closest_chunk(vector: pygame.Vector2) -> tuple[int, int]:
+def vector_to_closest_chunk_topleft(vector: pygame.Vector2) -> tuple[int, int]:
     return math.floor(vector.x/CHUNK_SIZE)*CHUNK_SIZE, math.floor(vector.y/CHUNK_SIZE)*CHUNK_SIZE
 
 
@@ -79,18 +87,23 @@ class BackgroundChunks(pygame.sprite.Sprite):
         super().__init__()
         self.chunks = {}
         self.image = pygame.Surface((CHUNK_SIZE*3, CHUNK_SIZE*3))
-        self.rect = pygame.Rect(0, 0, CHUNK_SIZE*3, CHUNK_SIZE*3)
+        # self.rect = pygame.Rect(0, 0, CHUNK_SIZE*SCALE*3, CHUNK_SIZE*SCALE*3)
+        self.rect = self.image.get_rect()
         self.player = player
         self.current_center_chunk = self.get_chunk_coords_containing_player()
-        self.level=2
+        self.level = CampaignDisplayZ.background.value
         self.refresh_background()
 
+        self.show_gridlines = True
+
     def get_chunk_coords_containing_player(self):
-        return vector_to_closest_chunk(self.player.position)
+        return vector_to_closest_chunk_topleft(self.player.position)
 
     def coords_of_chunks_to_render_at_current_position(self):
         closest_chunk = self.get_chunk_coords_containing_player()
         chunks_to_render = []
+
+
         for x in [closest_chunk[0]-CHUNK_SIZE, closest_chunk[0], closest_chunk[0]+CHUNK_SIZE]:
             for y in [closest_chunk[1]-CHUNK_SIZE, closest_chunk[1], closest_chunk[1]+CHUNK_SIZE]:
                 chunks_to_render.append((x, y))

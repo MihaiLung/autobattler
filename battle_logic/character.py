@@ -31,15 +31,6 @@ class CharacterActions(enum.Enum):
     IDLE = "idle"
     MOVING = "moving"
 
-scale = elf_stats.attack*10*SCALE
-# attack_image_elf = pygame.image.load("assets/sword_slice.png").convert_alpha()
-# attack_image_elf = pygame.transform.smoothscale(attack_image_elf, (scale, scale))
-
-# scale = orc_stats.attack*5*SCALE
-# attack_image_orc = pygame.image.load("assets/smoke_evil.png").convert_alpha()
-# attack_image_orc = pygame.transform.smoothscale(attack_image_orc, (scale, scale))
-# attack_image_orc = pygame.transform.flip(attack_image_orc, True, False)
-
 
 class AttackManager:
     def __init__(self, attacker: 'Character', target: 'Character') -> None:
@@ -72,7 +63,6 @@ class AttackManager:
 
 
 
-
 class Character(pygame.sprite.Sprite):
     LONGEST_ATTACK_INTERVAL = 300
 
@@ -82,6 +72,7 @@ class Character(pygame.sprite.Sprite):
         # Save stats
         self.stats = stats
         self.radius = stats.size*SCALE
+        self.image_path = stats.image_loc
 
         # Initialize sprite visuals
         if image_raw is None:
@@ -151,7 +142,6 @@ class Character(pygame.sprite.Sprite):
     def set_position_topleft(self, topleft_position: tuple[int, int]):
         self.rect.topleft = topleft_position
         self.position = pygame.Vector2(self.rect.topleft)
-
 
 
     def load_image(self):
@@ -273,26 +263,27 @@ class Character(pygame.sprite.Sprite):
     def proposed_next_position(self):
         return self.position+self.next_move
 
-    # def predicted_next_quadrant(self):
-
-
-    def control_angle(self, move: pygame.Vector2, angular_momentum=10):
-        if self.last_move.magnitude()==0:
-            return move
-        else:
-            angle = move.angle_to(self.last_move)
-            capped_angle = min(angle, 360-angle)
-            if capped_angle<angular_momentum:
-                return move.project(self.last_move.rotate(angle))
-            else:
-                direction = -1 if angle==capped_angle else 1
-                return move.rotate(direction*capped_angle)
+    # def control_angle(self, move: pygame.Vector2, angular_momentum=10):
+    #     if self.last_move.magnitude()==0:
+    #         return move
+    #     else:
+    #         angle = move.angle_to(self.last_move)
+    #         capped_angle = min(angle, 360-angle)
+    #         if capped_angle<angular_momentum:
+    #             return move.project(self.last_move.rotate(angle))
+    #         else:
+    #             direction = -1 if angle==capped_angle else 1
+    #             return move.rotate(direction*capped_angle)
 
     def update_rect_position(self):
         # High interpolation value = more momentum
-        if (self.next_move.magnitude()>self.speed*0.25) or self.willingness_to_move==0:
-            actual_move = self.next_move.lerp(self.last_move, 0.8)
-            if actual_move.magnitude()>=0.1:
+        # angle = self.last_move.angle_to(self.next_move)
+        # valid_move = min(angle, 360-angle)<45
+        valid_move = self.next_move.magnitude()>self.speed*0.3
+        if valid_move or self.willingness_to_move==0:
+            actual_move = self.next_move.lerp(self.last_move, 0.1)
+            actual_move = self.next_move
+            if actual_move.magnitude()>self.speed:
                 actual_move.clamp_magnitude_ip(self.speed)
             self.last_move = actual_move
             self.position += actual_move
@@ -309,6 +300,8 @@ class Character(pygame.sprite.Sprite):
             if self.rect.right>WIDTH:
                 self.rect.right=WIDTH
                 # self.momentum[0] = min(self.momentum[0], 0)
+        # else:
+        #     self.last_move = pygame.Vector2(0, 0)
 
     # ACTION - move towards
     def move_towards(self, target_rect):

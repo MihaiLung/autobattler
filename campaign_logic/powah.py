@@ -1,6 +1,6 @@
 import pygame
 
-from settings import WIDTH, HEIGHT
+from settings import WIDTH, HEIGHT, CampaignDisplayZ
 
 
 class Fireball(pygame.sprite.Sprite):
@@ -13,7 +13,7 @@ class Fireball(pygame.sprite.Sprite):
         self.position = position
         self.direction = (target-position).normalize()
         self.speed = 15
-        self.level = 3
+        self.level = CampaignDisplayZ.spells.value
         self.lifetime = 60
         # print("BONHJOUR!!!")
 

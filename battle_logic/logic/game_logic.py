@@ -1,5 +1,5 @@
 from battle_logic.animations.destroy_animation import DeathAnimation
-from battle_logic.battle.character import DamageAction#, AttackImpactSprite
+from battle_logic.character import DamageAction#, AttackImpactSprite
 from battle_logic.logic.utils import get_all_quadrants, get_colliding_sprites, sprite_distance, is_sprite_on_edge
 from settings import *
 
@@ -24,8 +24,7 @@ def update_group_states(friends, enemies, attack_animations):
             char.target.update_image()
         elif type(game_action) == DeathAnimation:
             attack_animations.add(game_action)
-        # elif game_action == "dead":
-        #     need_refresh_targets = True
+            need_refresh_targets = True
     if need_refresh_targets:
         if min(len(friends), len(enemies)) == 0:
             pygame.event.post(pygame.event.Event(GameEvents.BattleDone.value))

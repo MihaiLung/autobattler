@@ -6,8 +6,8 @@ screen = pygame.display.set_mode((WIDTH, HEIGHT) )
 from battle_logic.managers.battle_planning_manager import BattlePlanningManager
 from sys import exit
 from battle_logic.managers.battle_manager import BattleManager
-from user_interface import Button
-from battle_logic.battle.character import Character, CharacterGroup
+from ui.buttons import Button
+from battle_logic.character import Character, CharacterGroup
 from battle_logic.character_settings.minion_stats import elf_stats, orc_stats
 
 from battle_logic.logic.utils import *

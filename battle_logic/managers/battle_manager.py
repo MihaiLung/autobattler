@@ -1,6 +1,6 @@
 from settings import *
 from battle_logic.logic.game_logic import update_group_states, resolve_collisions
-from battle_logic.battle.character import CharacterGroup
+from battle_logic.character import CharacterGroup
 # from user_interface import UIButtons
 
 class AttackAnimations(pygame.sprite.Group):

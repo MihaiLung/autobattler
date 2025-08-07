@@ -1,6 +1,6 @@
 import pygame
 
-from settings import WIDTH, HEIGHT
+from settings import WIDTH, HEIGHT, CampaignDisplayZ
 
 
 class Player(pygame.sprite.Sprite):
@@ -14,9 +14,8 @@ class Player(pygame.sprite.Sprite):
         self.update_rect()
 
         self.speed = 15
-        self.position = pygame.Vector2(0,0)
         self.facing_right = True
-        self.level=4
+        self.level = CampaignDisplayZ.player.value
 
 
     def update_rect(self):
