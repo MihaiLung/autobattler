@@ -32,7 +32,7 @@ class BattleManager:
         self.attack_animations.draw(self.screen)
 
 
-    def update(self):
+    def update(self, pygame_events):
 
         self.refresh_targets_timer += 1
         if (self.refresh_targets_timer > 20):

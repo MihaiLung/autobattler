@@ -3,6 +3,8 @@ from battle_logic.character import CharacterGroup
 from settings import WIDTH
 from typing import Optional
 
+from utils import get_asset_path
+
 
 class SelectSpriteButton(pygame.sprite.Sprite):
     def __init__(self, proto_sprite):
@@ -12,7 +14,7 @@ class SelectSpriteButton(pygame.sprite.Sprite):
         self.proto_sprite = proto_sprite.copy()
 
         # Initialize the UI button by reading in the image from scratch (ensure good resolution)
-        self.image = pygame.image.load(proto_sprite.image_path).convert_alpha()
+        self.image = pygame.image.load(get_asset_path(proto_sprite.image_path)).convert_alpha()
         self.image = pygame.transform.smoothscale(self.image, (UI_BUTTON_SIZE, UI_BUTTON_SIZE))
         self.rect = self.image.get_rect()
 

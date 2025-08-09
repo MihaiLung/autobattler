@@ -1,6 +1,6 @@
 import pygame
 
-from info_window import InformationWindow
+from map_logic.info_window import InformationWindow
 from tuple_utils import *
 
 class MouseManager():

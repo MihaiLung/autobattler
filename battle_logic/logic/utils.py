@@ -53,7 +53,7 @@ def sprite_distance(sprite1, sprite2):
     :param sprite2:
     :return:
     """
-    radii = (sprite1.radius + sprite2.radius) / 2
+    radii = (sprite1.diameter + sprite2.diameter) / 2
     linking_vector = (sprite1.central_position_for_collision - sprite2.central_position_for_collision)
     return linking_vector.magnitude()-radii
 

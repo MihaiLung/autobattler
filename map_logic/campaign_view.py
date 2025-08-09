@@ -38,9 +38,6 @@ while True:
         if event.type == pygame.QUIT:
             pygame.quit()
             sys.exit()
-        if event.type == pygame.MOUSEBUTTONDOWN:
-            if event.button == 1:
-                if spr.rect.collidepoint(pygame.mouse.get_pos()):
 
 
         if event.type == pygame.MOUSEBUTTONUP:

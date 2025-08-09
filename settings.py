@@ -1,6 +1,7 @@
 import enum
 import pygame
-
+from typing import List, Tuple
+from battle_logic.character_settings.minion_base_class import MinionStats
 
 pygame.init()
 
@@ -15,7 +16,8 @@ COLLISION_QUADRANT_SIZE = 200
 class GameEvents(enum.Enum):
     BattlePlanningDone = pygame.USEREVENT+1
     BattleDone = pygame.USEREVENT+2
-    RestartGame = pygame.USEREVENT+3
+    EnterBattlePlanning = pygame.USEREVENT + 3
+    EnterCampaignMode = pygame.USEREVENT + 4
 
 # Campaign Settings
 CHUNK_SIZE = 1000
@@ -27,3 +29,5 @@ class CampaignDisplayZ(enum.Enum):
     buildings = 2
     player = 3
     spells = 4
+
+ENEMIES_CONFIG_DTYPE = List[Tuple[MinionStats, int]]

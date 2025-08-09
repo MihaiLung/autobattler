@@ -9,6 +9,8 @@ from dataclasses import dataclass
 import numpy as np
 
 from battle_logic.logic.utils import sprite_distance, get_closest_target
+from tuple_utils import tdiff
+from utils import get_asset_path
 
 FONT = pygame.font.SysFont(None, int(30*SCALE))
 
@@ -33,7 +35,7 @@ class CharacterActions(enum.Enum):
 
 
 class AttackManager:
-    def __init__(self, attacker: 'Character', target: 'Character') -> None:
+    def __init__(self, attacker: 'Character', target: 'Character', splash: int = 1) -> None:
 
         self.attacker = attacker
         self.target = target
@@ -43,18 +45,38 @@ class AttackManager:
         self.step_count: int = 0
         self.num_frames_forward: int = 5
         self.num_frames_backward: int = 30
-        self.speed_forward = self.attacker.radius*0.2/self.num_frames_forward
+        self.speed_forward = self.attacker.diameter * 0.2 / self.num_frames_forward
 
         # Reverse engineer what this needs to be for the end position to be exactly the start position
         self.speed_backward = self.speed_forward*self.num_frames_forward/self.num_frames_backward
+
+        self.splash = splash
+        self.enemies_group = self.target.own_group
+        # if self.splash:
+        #     print(len(self.enemies_group))
 
 
     def update(self):
         self.step_count += 1
         if self.step_count <= self.num_frames_forward:
             if self.step_count == self.num_frames_forward:
-                self.target.take_damage(self.attacker.stats.attack)
-                self.target.update_image()
+                if self.splash>1:
+                    contact_rect = self.target.rect.copy().inflate(200,200)
+                    # print(contact_rect)
+                    enemies_in_range = []
+                    for enemy in self.enemies_group.sprites():
+                        if enemy.rect.colliderect(contact_rect):
+                            enemies_in_range.append(enemy)
+
+                    hit_enemies = sorted(enemies_in_range, key=lambda e: sprite_distance(e, self.attacker))[:self.splash]
+                    damage = self.attacker.stats.attack/max(len(hit_enemies),1)
+                    print(damage)
+                    for enemy in hit_enemies:
+                        enemy.take_damage(damage)
+
+                else:
+                    self.target.take_damage(self.attacker.stats.attack)
+                    # self.target.update_image()
             return -self.direction_to_target*self.speed_forward
         elif self.step_count <= self.num_frames_forward+ self.num_frames_backward:
             return self.direction_to_target*self.speed_backward
@@ -67,12 +89,14 @@ class Character(pygame.sprite.Sprite):
     LONGEST_ATTACK_INTERVAL = 300
 
 
-    def __init__(self, stats: MinionStats, image_raw: Optional[pygame.Surface] = None):
+    def __init__(self, stats: MinionStats, own_group: Optional[CharacterGroup]=None, enemy_group: Optional[CharacterGroup]=None, image_raw: Optional[pygame.Surface] = None):
         super().__init__()
         # Save stats
         self.stats = stats
-        self.radius = stats.size*SCALE
+        self.diameter = stats.size * SCALE
         self.image_path = stats.image_loc
+        self.own_group = own_group
+        self.enemy_group = enemy_group
 
         # Initialize sprite visuals
         if image_raw is None:
@@ -133,7 +157,7 @@ class Character(pygame.sprite.Sprite):
 
     @property
     def central_position_for_collision(self):
-        return self.get_collision_position+pygame.Vector2(self.radius/2, self.radius/2)
+        return self.get_collision_position+pygame.Vector2(self.diameter / 2, self.diameter / 2)
 
     def set_position_center(self, central_position: tuple[int, int]):
         self.rect.center = central_position
@@ -145,41 +169,26 @@ class Character(pygame.sprite.Sprite):
 
 
     def load_image(self):
-        self.image_raw = pygame.image.load(self.stats.image_loc).convert_alpha()
-        self.image_raw = pygame.transform.smoothscale(self.image_raw, (self.radius, self.radius))
+        self.image_raw = pygame.image.load(get_asset_path(self.stats.image_loc)).convert_alpha()
+        self.image_raw = pygame.transform.smoothscale(self.image_raw, (self.diameter, self.diameter))
         self.image = self.image_raw.copy()
 
 
     def copy(self):
-        return Character(self.stats, self.image_raw.copy())
+        return Character(self.stats, self.own_group, self.enemy_group, self.image_raw.copy())
 
     def get_quadrant(self):
         quadrant_vector = pygame.Vector2(self.rect.center) / COLLISION_QUADRANT_SIZE
         return (int(quadrant_vector[0]), int(quadrant_vector[1]))
 
     def update_image(self):
-        # # Create a fresh copy so we never draw over the original
-        # self.image = self.image_raw.copy()
-        #
-        # # Prepare stat texts
-        # health_surf = FONT.render(str(self.current_health), True, (255, 0, 0))
-        # attack_surf = FONT.render(str(self.stats.attack), True, (0, 0, 0))
-        #
-        # # Position: health bottom-left, attack bottom-right
-        # health_pos = 3, self.image.get_height() - health_surf.get_height() - 3
-        # attack_pos = self.image.get_width() - attack_surf.get_width() - 3, \
-        #              self.image.get_height() - attack_surf.get_height() - 3
-        #
-        # # Overlay numbers
-        # self.image.blit(health_surf, health_pos)
-        # self.image.blit(attack_surf, attack_pos)
 
         self.image = self.image_raw.copy()
         health_prop = self.current_health/self.starting_health
 
         if health_prop<1:
-            bar_width = self.radius*0.9
-            bar_offset = self.radius*0.05
+            bar_width = self.diameter * 0.9
+            bar_offset = self.diameter * 0.05
             remaining_health_width = int(bar_width*health_prop)
             remaining_health_rect = pygame.Rect(bar_offset, 0, remaining_health_width, 10*SCALE)
 
@@ -190,13 +199,12 @@ class Character(pygame.sprite.Sprite):
             pygame.draw.rect(self.image, 'red', lost_health_rect)
 
 
-
-
     def deal_damage(self, target: 'Character'):
         target.current_health -= self.stats.attack-target.stats.armour
 
     def take_damage(self, damage: float):
         self.current_health -= damage-self.stats.armour
+        self.update_image()
 
     def set_target(self, target: 'Character'):
         self.target = target
@@ -247,7 +255,7 @@ class Character(pygame.sprite.Sprite):
                     self.next_move = pygame.Vector2(0,0)
                     self.collision_position = self.position.copy()
                     self.frames_until_attack_allowed = self.attack_timer
-                    self.attack_manager = AttackManager(self, self.target)
+                    self.attack_manager = AttackManager(self, self.target, self.stats.splash_limit)
             else:
                 self.move_towards(self.target.rect)
         if self.frames_until_attack_allowed>0:
@@ -262,18 +270,6 @@ class Character(pygame.sprite.Sprite):
     @property
     def proposed_next_position(self):
         return self.position+self.next_move
-
-    # def control_angle(self, move: pygame.Vector2, angular_momentum=10):
-    #     if self.last_move.magnitude()==0:
-    #         return move
-    #     else:
-    #         angle = move.angle_to(self.last_move)
-    #         capped_angle = min(angle, 360-angle)
-    #         if capped_angle<angular_momentum:
-    #             return move.project(self.last_move.rotate(angle))
-    #         else:
-    #             direction = -1 if angle==capped_angle else 1
-    #             return move.rotate(direction*capped_angle)
 
     def update_rect_position(self):
         # High interpolation value = more momentum
@@ -318,11 +314,7 @@ class Character(pygame.sprite.Sprite):
         draw_rect = self.rect.copy()
         draw_rect.center = centered_on
         screen.blit(self.image, draw_rect)
-    #
-    # def attack(self, target_rect: pygame.Rect):
-    #     # Update character state to attacking
-    #     self.current_action = CharacterActions.ATTACKING
-    #     self.attack_direction = pygame.Vector2(target_rect.x-self.rect.x, target_rect.y-self.rect.y)
+
 
 
 @dataclass

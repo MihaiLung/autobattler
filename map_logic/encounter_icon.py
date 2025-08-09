@@ -1,5 +1,8 @@
 import pygame
-import os
+
+from settings import ENEMIES_CONFIG_DTYPE, WIDTH, HEIGHT
+from utils import get_asset_path
+from typing import Optional
 
 
 def crop_to_square(image: pygame.Surface) -> pygame.Surface:
@@ -36,10 +39,13 @@ def crop_to_square(image: pygame.Surface) -> pygame.Surface:
     # Blit the cropped portion of the original image onto the new square surface.
     square_image.blit(image, (0, 0), source_rect)
 
-    return square_image
+    return square_image.convert_alpha()
+
+def load_square_image(loc):
+    return crop_to_square(pygame.image.load(get_asset_path(loc)).convert_alpha())
 
 class CircularImageSprite(pygame.sprite.Sprite):
-    def __init__(self, image_location, center, radius=60, border_color="green", border_width=8):
+    def __init__(self, image_location, center, enemies_config: Optional[ENEMIES_CONFIG_DTYPE] = None, radius=60, border_color="green", border_width=8):
         """
         Initializes a circular sprite with a bordered image.
 
@@ -52,8 +58,12 @@ class CircularImageSprite(pygame.sprite.Sprite):
         """
         super().__init__()
 
+        center = center[0]*WIDTH, center[1]*HEIGHT
+
         # --- Load and Scale Image ---
-        self.original_image = crop_to_square(pygame.image.load(image_location).convert_alpha())
+        self.encounter_image = load_square_image(image_location)
+        self.cleared_image = load_square_image("farm_icon.png")
+        self.enemies_config = enemies_config
 
 
         self.radius = radius
@@ -64,9 +74,10 @@ class CircularImageSprite(pygame.sprite.Sprite):
         # Calculate the inner radius for the image
         self.inner_radius = self.radius - self.border_width
         self.image_size = (self.inner_radius * 2, self.inner_radius * 2)
-        self.scaled_image = pygame.transform.smoothscale(self.original_image, self.image_size)
+        # self.scaled_image = pygame.transform.smoothscale(self.encounter_image, self.image_size)
 
         self.is_highlighted = False
+        self.is_cleared = False
         self.refresh_image(self.is_highlighted)
 
     def refresh_image(self, border: bool = False):
@@ -74,8 +85,11 @@ class CircularImageSprite(pygame.sprite.Sprite):
         # Create a surface for the inner image circle
         self.image = pygame.Surface(self.image_size, pygame.SRCALPHA)
         pygame.draw.circle(self.image, (255, 255, 255), (self.inner_radius, self.inner_radius), self.inner_radius)
-        # Blit the scaled image onto the circular surface using the 'mask' blend mode
-        self.image.blit(self.scaled_image, (0, 0), special_flags=pygame.BLEND_RGBA_MULT)
+
+
+        icon = self.cleared_image if self.is_cleared else self.encounter_image
+        scaled_icon = pygame.transform.scale(icon, self.image_size)
+        self.image.blit(scaled_icon, (0, 0), special_flags=pygame.BLEND_RGBA_MULT)
 
         # --- Combine with Border ---
         # Create a new surface large enough for the border

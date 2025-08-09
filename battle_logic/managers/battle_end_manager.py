@@ -1,6 +1,7 @@
 import pygame
 
 from battle_logic.managers.battle_manager import BattleManager
+from map_logic.encounter_icon import CircularImageSprite
 from settings import *
 from ui.buttons import Button
 
@@ -8,14 +9,17 @@ from ui.buttons import Button
 button_restart_game = Button(
     text='Restart Game',
     rect=pygame.Rect(int(WIDTH/2)-100,int(HEIGHT/2)-100, 200, 80),
-    button_press_event=pygame.event.Event(GameEvents.RestartGame.value),
+    # button_press_event=pygame.event.Event(GameEvents.EnterBattlePlanning.value),
+    button_press_event=pygame.event.Event(GameEvents.EnterCampaignMode.value),
 )
 
 class BattleOutcomeManager:
-    def __init__(self, battle_manager: BattleManager, screen):
+    def __init__(self, battle_manager: BattleManager, screen, encounter: CircularImageSprite):
         win = len(battle_manager.allied_group)>0
         if win:
             text = "You win! Congratulations!"
+            encounter.is_cleared = True
+            encounter.refresh_image()
         else:
             text = "You lost :( Better luck next time bestie!"
         self.battle_manager = battle_manager

@@ -1,5 +1,5 @@
 from battle_logic.animations.destroy_animation import DeathAnimation
-from battle_logic.character import DamageAction#, AttackImpactSprite
+from battle_logic.character import DamageAction, CharacterGroup, Character  # , AttackImpactSprite
 from battle_logic.logic.utils import get_all_quadrants, get_colliding_sprites, sprite_distance, is_sprite_on_edge
 from settings import *
 
@@ -14,17 +14,18 @@ def get_attack_visuals(all_group):
     return attack_animations
 
 
-def update_group_states(friends, enemies, attack_animations):
+def update_group_states(friends: CharacterGroup, enemies: CharacterGroup, attack_animations):
     need_refresh_targets = False
     for char in friends:
         game_action = char.update()
-        if type(game_action) == DamageAction:
-            # Resolve damage
-            char.deal_damage(char.target)
-            char.target.update_image()
-        elif type(game_action) == DeathAnimation:
+        if type(game_action) == DeathAnimation:
             attack_animations.add(game_action)
             need_refresh_targets = True
+            if "elf" in char.stats.image_loc:
+                nearby_allies = pygame.sprite.spritecollide(char, friends, False)
+                for ally in nearby_allies:
+                    ally.speed *= 2
+                    ally.stats.attack += 1
     if need_refresh_targets:
         if min(len(friends), len(enemies)) == 0:
             pygame.event.post(pygame.event.Event(GameEvents.BattleDone.value))
@@ -66,7 +67,7 @@ def resolve_collisions(allies_group, enemy_group):
                     else:
                         reference.next_move -= separation_vector*get_sprite_move_extent(reference, sprite)
                 # If getting close to overlapping but not quite there yet, start applying teeny push
-                elif overlap > -(sprite.radius+reference.radius)/10:
+                elif overlap > -(sprite.diameter + reference.diameter)/10:
                     if (sprite in allies_group) and (reference in allies_group):
                         separation_vector = linking_vector*0.0005
                         reference.next_move -= separation_vector*get_sprite_move_extent(reference, sprite)

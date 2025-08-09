@@ -2,6 +2,7 @@ import pygame
 import enum
 from typing import Optional, Tuple, List
 from battle_logic.character import Character, CharacterGroup
+from settings import HEIGHT
 
 
 class MouseStates(enum.Enum):
@@ -33,6 +34,10 @@ class MouseManager:
         # print(pygame.Rect(x, y, width, height))
         return pygame.Rect(x, y, width, height)
 
+    @staticmethod
+    def cap_mouse_location(pos: Tuple[int, int])-> Tuple[int, int]:
+        return pos[0], int(max(HEIGHT/2, pos[1]))
+
     def click(self, character: Optional[Character] = None, team: Optional[CharacterGroup] = None):
         # If pressed outside UI:
         if character is None:
@@ -45,7 +50,7 @@ class MouseManager:
             self.character = character.copy()
             self.team = team
 
-        self.click_pos = pygame.mouse.get_pos()
+        self.click_pos = self.cap_mouse_location(pygame.mouse.get_pos())
 
     def spawn_character_at_pos(self, pos: Tuple[int,int]):
         new_char = self.character.copy()
@@ -66,10 +71,10 @@ class MouseManager:
 
         # If the mouse is in spawning mode, draw formations (eg - behaviour after clicking and before releasing)
         if self.state == MouseStates.SPAWNING:
-            selection_rect = self.get_selection_rect(pygame.mouse.get_pos())
+            selection_rect = self.get_selection_rect(self.cap_mouse_location(pygame.mouse.get_pos()))
 
             self.character_positions = []
-            char_side_length = self.character.radius
+            char_side_length = self.character.diameter
             for i in range(int(selection_rect.width//char_side_length)):
                 for j in range(int(selection_rect.height//char_side_length)):
                     x = i*char_side_length+selection_rect.x
@@ -89,11 +94,3 @@ class MouseManager:
                 color=MouseManager.BRIGHT_GREEN,
                 width=8
             )
-
-
-            # if self.spawn_timer == 0:
-            #     new_char = self.character.copy()
-            #     new_char.set_position_center(pygame.mouse.get_pos())
-            #     self.team.add(new_char)
-            #     self.spawn_timer = MouseManager.SPAWN_COOLDOWN
-            # self.spawn_timer -= 1
