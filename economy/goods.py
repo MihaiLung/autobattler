@@ -2,6 +2,8 @@ import enum
 from typing import Dict, List
 from dataclasses import dataclass
 
+from utils import diff_dicts
+
 
 class Good(enum.Enum):
     GRAIN = 'grain'
@@ -19,9 +21,9 @@ class GoodStats:
 
 
 GOOD_STATS = {
-    Good.GRAIN: GoodStats("wood.png", 10, 10),
-    Good.MEAT: GoodStats("wood.png", 10, 20),
-    Good.WOOD: GoodStats("wood.png", 20, 40)
+    Good.GRAIN: GoodStats("grain_icon.png", 10, 10),
+    Good.MEAT: GoodStats("meat_icon.png", 10, 20),
+    Good.WOOD: GoodStats("wood_icon.png", 20, 40)
 }
 
 
@@ -76,6 +78,10 @@ class Marketplace:
             if market.demand > 0:
                 d_goods[good] = market.demand
         return d_goods
+
+    @property
+    def balance(self) -> Dict[Good, float]:
+        return diff_dicts(self.supply, self.demand)
 
     def add_demand(self, amount_of_goods: Dict[Good, float]):
         for good in amount_of_goods:

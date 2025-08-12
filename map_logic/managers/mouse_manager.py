@@ -1,7 +1,8 @@
 import pygame
 
 from map_logic.info_window import InformationWindow
-from tuple_utils import *
+from utils import tadd, tdiff
+
 
 class MouseManager():
     def __init__(self):

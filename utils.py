@@ -41,3 +41,11 @@ def diff_dicts(d1, d2):
     for key in set(d1.keys()) | set(d2.keys()):
         d[key] = d1.get(key, 0) - d2.get(key, 0)
     return d
+
+
+def tadd(tuple1, tuple2):
+    return tuple1[0] + tuple2[0], tuple1[1] + tuple2[1]
+
+
+def tdiff(tuple1, tuple2):
+    return tuple1[0] - tuple2[0], tuple1[1] - tuple2[1]

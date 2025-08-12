@@ -5,7 +5,7 @@ from settings import *
 from battle_logic.character import Character, CharacterGroup
 from ui.sprite_summon_menu import SpriteSummonUI
 from ui.buttons import Button
-from ui.resource_manager import ResourceTopBar, ResourceTracker
+from ui.resource_topbar import ResourceTopBar, ResourceTracker
 from typing import List, Tuple
 
 

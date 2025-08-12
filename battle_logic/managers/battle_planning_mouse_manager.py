@@ -3,7 +3,7 @@ import enum
 from typing import Optional, Tuple, List
 from battle_logic.character import Character, CharacterGroup
 from settings import HEIGHT
-from ui.resource_manager import ResourceTopBar
+from ui.resource_topbar import ResourceTopBar
 
 
 class MouseStates(enum.Enum):

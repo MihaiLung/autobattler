@@ -1,23 +1,28 @@
-from map_logic.campaign_config import forest_campaign_config, home_node
+from economy.economy_manager import EconomyManager
+from economy.goods import GOOD_STATS
+from economy.worker import get_worker_manager
+from map_logic.campaign_config import forest_campaign_config, home_node, CampaignConfig
 from map_logic.managers.mouse_manager import MouseManager
 from map_logic.player import PlayerStatus, Player
-from ui.resource_manager import ResourceTopBar, ResourceTracker
+from ui.resource_topbar import ResourceTopBar, ResourceTracker
 from settings import *
 from utils import get_asset_path
+import time
 
 player = Player(home_node, forest_campaign_config)
 
 class CampaignManager:
-    def __init__(self, screen, campaign_config):
+    def __init__(self, screen, campaign_config: CampaignConfig, economy_manager: EconomyManager):
         self.screen = screen
         self.screen_rect = screen.get_rect()
         self.nodes = pygame.sprite.Group()
+        self.campaign_config = campaign_config
+        self.economy_manager = economy_manager
+
         for node in campaign_config.d_neighbors:
             self.nodes.add(node)
             for end_node in campaign_config.d_neighbors[node]:
                 self.nodes.add(end_node)
-        # self.nodes.add(wolf_node)
-        # self.nodes.add(wolf_node_2)
         self.triggered_encounter = None
 
         background = pygame.image.load(get_asset_path("fantasia_mappia.png"))
@@ -25,11 +30,36 @@ class CampaignManager:
         self.mouse_manager = MouseManager()
         self.player_path = None
 
-        resources = [
-            ResourceTracker("Wood", "wood_icon.png", 100)
-        ]
-        self.resource_topbar = ResourceTopBar(resources)
 
+        self.resource_topbar = ResourceTopBar([])
+        self.refresh_resources()
+        self.checkpoint = time.time()
+
+    def refresh_resources(self):
+        # resources = [
+        #     ResourceTracker("Wood", "wood_icon.png", 100)
+        # ]
+        print(self.economy_manager.market.good_markets)
+        market_balance = self.economy_manager.market.balance
+        resources = []
+        for good in market_balance:
+            good_stats = GOOD_STATS[good]
+            resources.append(
+                ResourceTracker(good.value.title(), good_stats.image_loc, market_balance[good])
+            )
+        for worker in self.economy_manager.worker_counts:
+            worker_stats = get_worker_manager(worker)
+            resources.append(
+                ResourceTracker(
+                    worker.value.title(),
+                    worker_stats.image_loc,
+                    self.economy_manager.worker_counts[worker],
+                    self.economy_manager.unemployed_workers[worker]
+                )
+            )
+        print(resources)
+        self.resource_topbar.resources = resources
+        self.resource_topbar.compile_ui()
 
     def highlight_hover(self):
         for node in self.nodes:
@@ -82,5 +112,11 @@ class CampaignManager:
         player.update()
         player.draw(self.screen)
         self.resource_topbar.draw(self.screen)
+
+        # Tick the economy every 10 seconds
+        if time.time()-self.checkpoint>1:
+            self.checkpoint += 1
+            self.economy_manager.tick_economy()
+            self.refresh_resources()
 
 

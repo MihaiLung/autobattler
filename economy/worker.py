@@ -1,6 +1,7 @@
 from typing import List, Dict
 from dataclasses import dataclass, fields
 import enum
+
 from economy.goods import Good
 
 
@@ -33,6 +34,7 @@ default_suitabilities = {job: 3 if job != Job.MAGIC else 0 for job in Job}
 
 @dataclass
 class WorkerManager:
+    image_loc: str
     custom_job_capacities: List[JobCapacity]
     sustenance_goods: Dict[Good, float]
 
@@ -62,6 +64,7 @@ class Worker(enum.Enum):
 
 WORKER_MANAGERS = {
     Worker.ELF:  WorkerManager(
+        "elf.png",
         [
             JobCapacity(Job.FARMING, 5),
             JobCapacity(Job.WOODCUTTING, 2),
@@ -72,6 +75,7 @@ WORKER_MANAGERS = {
         }
     ),
     Worker.ORC:  WorkerManager(
+        "orc.png",
         [
             JobCapacity(Job.FARMING, 1),
             JobCapacity(Job.WOODCUTTING, 5),

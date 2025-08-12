@@ -1,7 +1,7 @@
 from collections import Counter
 
 # from economy.tracker_base_class import Tracker
-from goods import Good,  GoodStats
+from economy.goods import Good,  GoodStats
 from dataclasses import dataclass
 
 # from economy.economy_base_classes import
@@ -172,13 +172,13 @@ class Building:
         actual_reduction = min(self.production_method.level, num_levels)
         self.production_method.remove_levels(actual_reduction)
 
-
-standard_woodcutting = ProductionMethod(
+example_woodcutting = ProductionMethod(
     job_capacity_demand_per_level={Job.WOODCUTTING: 10, Job.FARMING: 5, Job.MAGIC: 1},
     good_consumption={},
     good_production={Good.WOOD: 10, Good.MEAT: 5, Good.GRAIN: 4},
     level=5,
 )
+
 
 if __name__ == "__main__":
     elf = Worker.ELF
@@ -186,4 +186,4 @@ if __name__ == "__main__":
 
     # print(standard_woodcutting.get_total_job_capacity_supply(Job.WOODCUTTING))
 
-    Woods = Building(standard_woodcutting, 20)
+    Woods = Building(example_woodcutting, 20)

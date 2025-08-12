@@ -1,6 +1,6 @@
 from collections import Counter
 
-from economy.buildings import Building, ProductionMethod, standard_woodcutting
+from economy.buildings import Building, ProductionMethod
 from economy.goods import Marketplace, Good
 from typing import List, Dict, Tuple
 
@@ -8,6 +8,7 @@ from economy.worker import Worker, Job, get_worker_manager
 from utils import multiply_dict_by_value, add_dicts
 
 from dataclasses import dataclass
+import time
 
 @dataclass
 class WorkEvaluation:
@@ -38,6 +39,7 @@ class EconomyManager:
         self.unemployed_workers = workers
 
         self._allocate_initial_workforce()
+        self.refresh_market()
 
     @property
     def capacity_usage_potentials(self) -> Dict[Job, float]:
@@ -110,7 +112,7 @@ class EconomyManager:
         d_opportunities = {}
         for building in self.buildings:
             d_opportunities[building] = {}
-            for job in building.production_method.job_capacity_demand_per_level:
+            for job in building.production_method.jobs_with_capacity_for_worker(worker):
                 d_opportunities[building][job] = self.evaluate_impact_of_adding_worker_to_job(worker, job, building)
         return d_opportunities
 
@@ -150,8 +152,7 @@ class EconomyManager:
                     )
         return most_profitable_opportunity
 
-
-    def tick_economy(self):
+    def refresh_market(self):
         # Update marketplace with demand and supply
         self.market = Marketplace()
         for worker in self.worker_counts:
@@ -163,57 +164,68 @@ class EconomyManager:
             self.market.add_demand(production_method.input_goods_demand)
             self.market.add_supply(production_method.output_goods_supply)
 
+
+    def tick_economy(self):
+        self.refresh_market()
+
         # Assign unemployed workers
-        num_worker_assignments_per_tick = 50
+        num_worker_assignments_per_tick = 10
         for i in range(num_worker_assignments_per_tick):
             worker_opportunites = []
             print("="*20)
             print("Opportunities at step ", i)
-            for worker in self.unemployed_workers:
-                print(f"For worker {worker}:")
-                if self.unemployed_workers[worker]>0:
-                    most_profitable_opportunity = self.best_opportunity_for_worker(worker=worker)
-                    if most_profitable_opportunity is not None:
-                        worker_opportunites.append(most_profitable_opportunity)
-                print(f"Best opportunity: {most_profitable_opportunity}")
-                print()
-            best_assignment = max(worker_opportunites, key=lambda w: w.value)
-            if type(best_assignment) is WorkEvaluation:
-                best_assignment.apply_assignment()
-                print(f"Opportunity assigned to worker {best_assignment.worker} for job {best_assignment.job}")
-                self.unemployed_workers[best_assignment.worker] -= 1
 
-            print(f"Job fulfillment: {self.buildings[0].production_method.job_fulfillment}")
-            print(f"Market demand: {self.market.demand}")
-            print(f"Market supply: {self.market.supply}")
-            print("="*20)
-            print("\n")
+            if sum(self.unemployed_workers.values())>0:
+                for worker in self.unemployed_workers:
+                    print(f"For worker {worker}:")
+                    if self.unemployed_workers[worker]>0:
+                        most_profitable_opportunity = self.best_opportunity_for_worker(worker=worker)
+                        if most_profitable_opportunity is not None:
+                            worker_opportunites.append(most_profitable_opportunity)
+                    # print(f"Best opportunity: {most_profitable_opportunity}")
+                    print()
+
+                if len(worker_opportunites)>0:
+                    best_assignment = max(worker_opportunites, key=lambda w: w.value)
+                    if type(best_assignment) is WorkEvaluation:
+                        best_assignment.apply_assignment()
+                        print(f"Opportunity assigned to worker {best_assignment.worker} for job {best_assignment.job}")
+                        self.unemployed_workers[best_assignment.worker] -= 1
+
+                    # print(f"Job fulfillment: {self.buildings[0].production_method.job_fulfillment}")
+                    # print(f"Market demand: {self.market.demand}")
+                    # print(f"Market supply: {self.market.supply}")
+                    # print("="*20)
+                    # print("\n")
 
 
 standard_woodcutting = ProductionMethod(
-    job_capacity_demand_per_level={Job.WOODCUTTING: 10, Job.FARMING: 5, Job.MAGIC: 1},
+    job_capacity_demand_per_level={Job.WOODCUTTING: 15},
     good_consumption={},
-    good_production={Good.WOOD: 10, Good.MEAT: 5, Good.GRAIN: 4},
+    good_production={Good.WOOD: 10, Good.MEAT: 5},
     level=50,
 )
 
+standard_farming = ProductionMethod(
+    job_capacity_demand_per_level={Job.FARMING: 20},
+    good_consumption={},
+    good_production={Good.GRAIN: 8},
+    level=50,
+)
+
+
 buildings = [
-    Building(standard_woodcutting)
+    Building(standard_woodcutting),
+    Building(standard_farming),
 ]
 workers = Counter({
-    Worker.ORC: 10,
+    Worker.ORC: 40,
     Worker.ELF: 100
 })
 economy_manager = EconomyManager(buildings=buildings, workers=workers)
 
 if __name__ == '__main__':
     economy_manager.tick_economy()
-
-    summary_dict = {}
-    for job in buildings[0].production_method.workforce:
-        summary_dict[job.name] = {}
-        job_workforce = buildings[0].production_method.workforce[job]
-        for worker in job_workforce:
-            summary_dict[job.name][worker.name] = job_workforce[worker]
-
-    print(standard_woodcutting.job_fulfillment)
+    for i in range(100):
+        print(f"Tick {i}")
+        economy_manager.tick_economy()

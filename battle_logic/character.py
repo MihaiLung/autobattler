@@ -9,8 +9,7 @@ from dataclasses import dataclass
 import numpy as np
 
 from battle_logic.logic.utils import sprite_distance, get_closest_target
-from tuple_utils import tdiff
-from utils import get_asset_path
+from utils import get_asset_path, tdiff
 
 FONT = pygame.font.SysFont(None, int(30*SCALE))
 

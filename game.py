@@ -26,7 +26,7 @@ allies_config = [
 
 
 # Start up game
-campaign_manager = CampaignManager(screen, forest_campaign_config)
+campaign_manager = CampaignManager(screen, forest_campaign_config, economy_manager)
 active_manager = campaign_manager
 game_state = GameState.CAMPAIGN_MAP
 triggered_encounter = None
@@ -67,13 +67,6 @@ while True:
             active_manager = campaign_manager
 
     active_manager.update(pygame_events)
-    if type(active_manager)==CampaignManager:
-        # Tick the economy every 10 seconds
-        if time.time()-checkpoint>10*60:
-            checkpoint += 10*60
-            economy_manager.tick_economy()
-
-
 
     pygame.display.update()
     clock.tick(120)

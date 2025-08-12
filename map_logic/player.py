@@ -5,8 +5,7 @@ import numpy as np
 import pygame
 
 from map_logic.campaign_config import forest_campaign_config, CampaignConfig
-from tuple_utils import tdiff
-from utils import get_asset_path
+from utils import get_asset_path, tdiff
 
 
 class PlayerStatus(enum.Enum):
