@@ -1,11 +1,11 @@
 from typing import List, Dict
 from dataclasses import dataclass, fields
 import enum
-from goods import Good
+from economy.goods import Good
 
 
 def get_worker_manager(worker):
-    return WORKER_MANAGERS[worker.value]
+    return WORKER_MANAGERS[worker]
 
 
 class Job(enum.Enum):
@@ -44,7 +44,7 @@ class WorkerManager:
             if not isinstance(capacity, JobCapacity):
                 raise TypeError("Must be a valid JobSuitability")
 
-    def get_capacity(self, job: Job):
+    def get_job_capacity(self, job: Job):
         for proficiency in self.custom_job_capacities:
             if proficiency.job == job:
                 return proficiency.value
@@ -61,7 +61,7 @@ class Worker(enum.Enum):
     ORC = 'orc'
 
 WORKER_MANAGERS = {
-    Worker.ELF.value:  WorkerManager(
+    Worker.ELF:  WorkerManager(
         [
             JobCapacity(Job.FARMING, 5),
             JobCapacity(Job.WOODCUTTING, 2),
@@ -71,7 +71,7 @@ WORKER_MANAGERS = {
             Good.GRAIN: 1
         }
     ),
-    Worker.ORC.value:  WorkerManager(
+    Worker.ORC:  WorkerManager(
         [
             JobCapacity(Job.FARMING, 1),
             JobCapacity(Job.WOODCUTTING, 5),
@@ -82,3 +82,6 @@ WORKER_MANAGERS = {
         }
     )
 }
+
+# print(id(Good.MEAT))
+# print(id(list(WORKER_MANAGERS[Worker.ORC].sustenance_goods.keys())[0]))

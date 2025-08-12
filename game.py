@@ -1,3 +1,4 @@
+import time
 from settings import *
 
 pygame.init()
@@ -11,6 +12,7 @@ from battle_logic.character_settings.minion_stats import elf_stats
 from battle_logic.managers.battle_planning_manager import BattlePlanningManager
 from battle_logic.managers.battle_end_manager import BattleOutcomeManager
 from map_logic.campaign_config import forest_campaign_config
+from economy.economy_manager import economy_manager
 
 from battle_logic.logic.utils import *
 
@@ -21,11 +23,15 @@ allies_config = [
     elf_stats,
 ]
 
+
+
 # Start up game
 campaign_manager = CampaignManager(screen, forest_campaign_config)
 active_manager = campaign_manager
 game_state = GameState.CAMPAIGN_MAP
 triggered_encounter = None
+
+checkpoint = time.time()
 while True:
     pygame_events = pygame.event.get()
     for event in pygame_events:
@@ -57,10 +63,15 @@ while True:
                 active_manager = battle_planning_manager
                 game_state = GameState.BATTLE_PREP
         if event.type == GameEvents.EnterCampaignMode.value:
-            campaign_manager = CampaignManager(screen, campaign_config=forest_campaign_config)
+            campaign_manager = CampaignManager(screen, campaign_config=forest_campaign_config, economy_manager=economy_manager)
             active_manager = campaign_manager
 
     active_manager.update(pygame_events)
+    if type(active_manager)==CampaignManager:
+        # Tick the economy every 10 seconds
+        if time.time()-checkpoint>10*60:
+            checkpoint += 10*60
+            economy_manager.tick_economy()
 
 
 

@@ -37,6 +37,7 @@ def add_dicts(d1, d2):
 
 def diff_dicts(d1, d2):
     d = {}
+    # print(set(d1.keys()) | set(d2.keys()))
     for key in set(d1.keys()) | set(d2.keys()):
         d[key] = d1.get(key, 0) - d2.get(key, 0)
     return d

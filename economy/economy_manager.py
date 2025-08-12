@@ -19,6 +19,9 @@ class WorkEvaluation:
     def apply_assignment(self):
         self.building.production_method.add_workers(self.worker, self.job, 1)
 
+    def __str__(self):
+        return f"WorkEvaluation(worker={self.worker}, job={self.job}, value={self.value})"
+
 @dataclass
 class ProfitEvaluation:
     full_productivity: float
@@ -26,7 +29,7 @@ class ProfitEvaluation:
 
     @property
     def opportunity_value(self) -> float:
-        return self.actual*0.7 + self.full_productivity*0.3
+        return self.actual*0.98 + self.full_productivity*0.00002
 
 class EconomyManager:
     def __init__(self, buildings: List[Building], workers: Counter[Worker]):
@@ -49,7 +52,7 @@ class EconomyManager:
 
     @staticmethod
     def most_suitable_worker(workers: List[Worker], job: Job) -> Worker:
-        return max(workers, key=lambda w: get_worker_manager(w).get_capacity(job))
+        return max(workers, key=lambda w: get_worker_manager(w).get_job_capacity(job))
 
     def _allocate_initial_workforce(self, num_workers_per_job: int = 2):
         """
@@ -121,11 +124,21 @@ class EconomyManager:
 
     def best_opportunity_for_worker(self, worker: Worker) -> WorkEvaluation:
         d_opportunities = self.evaluate_worker_opportunities(worker=worker)
+        print("Opportunities evaluations")
+        for building in d_opportunities:
+            for job in d_opportunities[building]:
+                print(f"-- {job} -- {d_opportunities[building][job]}")
         best_opportunity_value = 0.
         most_profitable_opportunity = None
         for building in d_opportunities:
-            # shortage_jobs = building.production_method.shortage_jobs()
-            for job in d_opportunities[building]:
+            possible_jobs = building.production_method.jobs_with_capacity_for_worker(worker=worker)
+            shortage_jobs = building.production_method.shortage_jobs()
+            if len(shortage_jobs) > 0:
+                search_jobs = shortage_jobs
+            else:
+                search_jobs = possible_jobs
+            print(f"Search jobs were: {search_jobs}")
+            for job in search_jobs:
                 opportunity_value = d_opportunities[building][job].opportunity_value
                 if opportunity_value > best_opportunity_value:
                     best_opportunity_value = opportunity_value
@@ -140,54 +153,61 @@ class EconomyManager:
 
     def tick_economy(self):
         # Update marketplace with demand and supply
-        marketplace = Marketplace()
+        self.market = Marketplace()
         for worker in self.worker_counts:
-            marketplace.add_demand(multiply_dict_by_value(get_worker_manager(worker).sustenance_goods, self.worker_counts[worker]))
+
+            self.market.add_demand(multiply_dict_by_value(get_worker_manager(worker).sustenance_goods, self.worker_counts[worker]))
+
         for building in self.buildings:
             production_method = building.production_method
-            marketplace.add_demand(production_method.input_goods_demand)
-            marketplace.add_supply(production_method.output_goods_supply)
+            self.market.add_demand(production_method.input_goods_demand)
+            self.market.add_supply(production_method.output_goods_supply)
 
         # Assign unemployed workers
         num_worker_assignments_per_tick = 50
         for i in range(num_worker_assignments_per_tick):
             worker_opportunites = []
+            print("="*20)
+            print("Opportunities at step ", i)
             for worker in self.unemployed_workers:
+                print(f"For worker {worker}:")
                 if self.unemployed_workers[worker]>0:
                     most_profitable_opportunity = self.best_opportunity_for_worker(worker=worker)
                     if most_profitable_opportunity is not None:
                         worker_opportunites.append(most_profitable_opportunity)
+                print(f"Best opportunity: {most_profitable_opportunity}")
+                print()
             best_assignment = max(worker_opportunites, key=lambda w: w.value)
             if type(best_assignment) is WorkEvaluation:
-                print("-"*10)
-                print(self.worker_counts)
-                print("before")
-                print(best_assignment.building.production_method.workforce)
                 best_assignment.apply_assignment()
+                print(f"Opportunity assigned to worker {best_assignment.worker} for job {best_assignment.job}")
                 self.unemployed_workers[best_assignment.worker] -= 1
-                print("after")
-                print(best_assignment.building.production_method.workforce)
-                print("-"*10)
+
+            print(f"Job fulfillment: {self.buildings[0].production_method.job_fulfillment}")
+            print(f"Market demand: {self.market.demand}")
+            print(f"Market supply: {self.market.supply}")
+            print("="*20)
+            print("\n")
 
 
+standard_woodcutting = ProductionMethod(
+    job_capacity_demand_per_level={Job.WOODCUTTING: 10, Job.FARMING: 5, Job.MAGIC: 1},
+    good_consumption={},
+    good_production={Good.WOOD: 10, Good.MEAT: 5, Good.GRAIN: 4},
+    level=50,
+)
+
+buildings = [
+    Building(standard_woodcutting)
+]
+workers = Counter({
+    Worker.ORC: 10,
+    Worker.ELF: 100
+})
+economy_manager = EconomyManager(buildings=buildings, workers=workers)
 
 if __name__ == '__main__':
-    standard_woodcutting = ProductionMethod(
-        job_capacity_demand_per_level={Job.WOODCUTTING: 10, Job.FARMING: 5},
-        good_consumption={},
-        good_production={Good.WOOD: 10, Good.MEAT: 5, Good.GRAIN: 4},
-        level=50,
-    )
-
-    buildings = [
-        Building(standard_woodcutting)
-    ]
-    workers = Counter({
-        Worker.ORC: 10,
-        Worker.ELF: 100
-    })
-    manager = EconomyManager(buildings=buildings, workers=workers)
-    manager.tick_economy()
+    economy_manager.tick_economy()
 
     summary_dict = {}
     for job in buildings[0].production_method.workforce:
@@ -195,7 +215,5 @@ if __name__ == '__main__':
         job_workforce = buildings[0].production_method.workforce[job]
         for worker in job_workforce:
             summary_dict[job.name][worker.name] = job_workforce[worker]
-    print(summary_dict)
-    print(manager.unemployed_workers)
-    print(manager.worker_counts)
 
+    print(standard_woodcutting.job_fulfillment)
