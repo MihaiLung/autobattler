@@ -31,3 +31,10 @@ class CampaignDisplayZ(enum.Enum):
     spells = 4
 
 ENEMIES_CONFIG_DTYPE = List[Tuple[MinionStats, int]]
+
+
+class GameState(enum.Enum):
+    CAMPAIGN_MAP='campaign_map'
+    BATTLE_PREP='battle_prep',
+    BATTLE='battle',
+    BATTLE_OUTCOME_SCREEN='battle_outcome_screen',

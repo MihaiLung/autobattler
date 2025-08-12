@@ -3,6 +3,7 @@ import enum
 from typing import Optional, Tuple, List
 from battle_logic.character import Character, CharacterGroup
 from settings import HEIGHT
+from ui.resource_manager import ResourceTopBar
 
 
 class MouseStates(enum.Enum):
@@ -18,13 +19,15 @@ class MouseManager:
     SOFT_TRANSPARENT_GREEN = (144, 238, 144, 90)
 
 
-    def __init__(self):
+    def __init__(self, resource_top_bar: ResourceTopBar):
         self.state = MouseStates.EMPTY
         self.character: Optional[Character] = None
         self.team: Optional[CharacterGroup] = None
         self.spawn_timer = 0
         self.click_pos = Tuple[int,int]
         self.character_positions: List[Tuple[int,int]] = []
+
+        self.resource_top_bar = resource_top_bar
 
     def get_selection_rect(self, pos) -> pygame.Rect:
         x = int(min(self.click_pos[0], pos[0]))
@@ -63,6 +66,7 @@ class MouseManager:
                 self.spawn_character_at_pos(pos)
             self.character_positions = []
             self.state = MouseStates.EMPTY
+            self.resource_top_bar.confirm_proposed_reduction()
 
     def hover(self, screen: pygame.Surface):
         # Always display the character under the mouse, if it's selected
@@ -74,13 +78,22 @@ class MouseManager:
             selection_rect = self.get_selection_rect(self.cap_mouse_location(pygame.mouse.get_pos()))
 
             self.character_positions = []
+
+            max_allowed = self.resource_top_bar.resources[0].amount
             char_side_length = self.character.diameter
+
+            num_chars_drawn = 0
             for i in range(int(selection_rect.width//char_side_length)):
                 for j in range(int(selection_rect.height//char_side_length)):
-                    x = i*char_side_length+selection_rect.x
-                    y = j*char_side_length+selection_rect.y
-                    self.character_positions.append((x, y))
-                    screen.blit(self.character.image, (x, y))
+                    if num_chars_drawn < max_allowed:
+                        x = i*char_side_length+selection_rect.x
+                        y = j*char_side_length+selection_rect.y
+                        self.character_positions.append((x, y))
+                        screen.blit(self.character.image, (x, y))
+                        num_chars_drawn += 1
+
+            self.resource_top_bar.resources[0].proposed_reduction = num_chars_drawn
+            self.resource_top_bar.compile_ui()
 
 
             transparent_surface = pygame.Surface((selection_rect.width, selection_rect.height), pygame.SRCALPHA)

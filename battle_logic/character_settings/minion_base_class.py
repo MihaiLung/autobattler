@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import Optional, List, Tuple
 
 import pygame
 
@@ -16,3 +17,4 @@ class MinionStats:
     image_loc: str
     # weapon: pygame.Surface
     attack_cooldown: int = 90
+    abilities: Optional[List] = None

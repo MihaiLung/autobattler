@@ -4,43 +4,25 @@ pygame.init()
 screen = pygame.display.set_mode((WIDTH, HEIGHT) )
 
 from sys import exit
-from map_logic.campaign_manager import CampaignManager
+from map_logic.managers.campaign_manager import CampaignManager
 
 from battle_logic.managers.battle_manager import BattleManager
-from ui.buttons import Button
-from battle_logic.character import Character, CharacterGroup
-from battle_logic.character_settings.minion_stats import elf_stats, orc_stats
-# from battle_logic.managers.battle_planning_manager_twosided import BattlePlanningManagerTwoSided
+from battle_logic.character_settings.minion_stats import elf_stats
 from battle_logic.managers.battle_planning_manager import BattlePlanningManager
 from battle_logic.managers.battle_end_manager import BattleOutcomeManager
+from map_logic.campaign_config import forest_campaign_config
 
 from battle_logic.logic.utils import *
-
-
-class GameState(enum.Enum):
-    CAMPAIGN_MAP='campaign_map'
-    BATTLE_PREP='battle_prep',
-    BATTLE='battle',
-    BATTLE_OUTCOME_SCREEN='battle_outcome_screen',
 
 pygame.display.set_caption("World of VAVAVAVA")
 clock = pygame.time.Clock()
 
-
-camera = pygame.sprite.Group()
-
-# orc_group = CharacterGroup()
-# elf_group = CharacterGroup()
-# all_group = CharacterGroup()
-
-attack_animations = pygame.sprite.Group()
-
-# proto_elf = Character(elf_stats)#, elf_group, orc_group)
 allies_config = [
     elf_stats,
 ]
 
-campaign_manager = CampaignManager(screen)
+# Start up game
+campaign_manager = CampaignManager(screen, forest_campaign_config)
 active_manager = campaign_manager
 game_state = GameState.CAMPAIGN_MAP
 triggered_encounter = None
@@ -75,7 +57,7 @@ while True:
                 active_manager = battle_planning_manager
                 game_state = GameState.BATTLE_PREP
         if event.type == GameEvents.EnterCampaignMode.value:
-            campaign_manager = CampaignManager(screen)
+            campaign_manager = CampaignManager(screen, campaign_config=forest_campaign_config)
             active_manager = campaign_manager
 
     active_manager.update(pygame_events)

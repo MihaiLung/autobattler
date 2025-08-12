@@ -1,4 +1,4 @@
-from battle_logic.managers.mouse_manager import MouseManager
+from battle_logic.managers.battle_planning_mouse_manager import MouseManager
 from settings import *
 from battle_logic.character import Character, CharacterGroup
 from ui.sprite_summon_menu import SpriteSummonUI

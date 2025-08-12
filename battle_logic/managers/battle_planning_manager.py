@@ -1,11 +1,13 @@
 from battle_logic.character_settings.minion_base_class import MinionStats
 from battle_logic.character_settings.minion_stats import orc_stats
-from battle_logic.managers.mouse_manager import MouseManager
+from battle_logic.managers.battle_planning_mouse_manager import MouseManager
 from settings import *
 from battle_logic.character import Character, CharacterGroup
 from ui.sprite_summon_menu import SpriteSummonUI
 from ui.buttons import Button
+from ui.resource_manager import ResourceTopBar, ResourceTracker
 from typing import List, Tuple
+
 
 
 enemies_config = {
@@ -77,12 +79,17 @@ class BattlePlanningManager:
         self.background = pygame.transform.scale(background, (WIDTH, HEIGHT))
 
         self.screen = screen
-        self.mouse_manager = MouseManager()
         self.planning_done_button = Button(
             text="START!",
-            rect=pygame.Rect(WIDTH / 2 - 100, 20, 200, 70),
+            rect=pygame.Rect(WIDTH / 2 - 100, 70, 200, 70),
             button_press_event=pygame.event.Event(GameEvents.BattlePlanningDone.value)
         )
+
+        resources = [
+            ResourceTracker("Elfs", "elf.png", 60)
+        ]
+        self.resource_top_bar = ResourceTopBar(resources)
+        self.mouse_manager = MouseManager(self.resource_top_bar)
 
 
     def update(self, pygame_events):
@@ -117,5 +124,6 @@ class BattlePlanningManager:
 
         self.mouse_manager.hover(self.screen)
         self.planning_done_button.draw(self.screen)
+        self.resource_top_bar.draw(self.screen)
 
 

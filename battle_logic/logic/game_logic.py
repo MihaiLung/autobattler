@@ -24,8 +24,9 @@ def update_group_states(friends: CharacterGroup, enemies: CharacterGroup, attack
             if "elf" in char.stats.image_loc:
                 nearby_allies = pygame.sprite.spritecollide(char, friends, False)
                 for ally in nearby_allies:
-                    ally.speed *= 2
-                    ally.stats.attack += 1
+                    ally.speed *= 1.1
+                    ally.attack_speed *= 1.1
+                    ally.recompute_attack_timer()
     if need_refresh_targets:
         if min(len(friends), len(enemies)) == 0:
             pygame.event.post(pygame.event.Event(GameEvents.BattleDone.value))

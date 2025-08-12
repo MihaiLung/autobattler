@@ -86,7 +86,7 @@ class AttackManager:
 
 
 class Character(pygame.sprite.Sprite):
-    LONGEST_ATTACK_INTERVAL = 300
+    LONGEST_ATTACK_INTERVAL = 600
 
 
     def __init__(self, stats: MinionStats, own_group: Optional[CharacterGroup]=None, enemy_group: Optional[CharacterGroup]=None, image_raw: Optional[pygame.Surface] = None):
@@ -116,7 +116,8 @@ class Character(pygame.sprite.Sprite):
         self.starting_health = stats.health
         self.current_health = stats.health
         self.update_image()
-        self.attack_timer = Character.LONGEST_ATTACK_INTERVAL/self.stats.attack_speed
+        self.attack_speed = stats.attack_speed
+        self.attack_timer = Character.LONGEST_ATTACK_INTERVAL/self.attack_speed
         self.frames_until_attack_allowed = 0
 
         # Initialize sprite state
@@ -127,6 +128,18 @@ class Character(pygame.sprite.Sprite):
         self.willingness_to_move = 1
         self.attack_manager: Optional[AttackManager] = None
 
+        if stats.abilities:
+            self.abilities = [ability(self) for ability in stats.abilities]
+        else:
+            self.abilities = []
+
+    def recompute_attack_timer(self):
+        current_attack_timer = self.attack_timer
+        self.attack_timer = Character.LONGEST_ATTACK_INTERVAL/self.attack_speed
+
+        # If a character's attack speed changes, apply the change to their current timer too (more responsive)
+        attack_timer_diff = current_attack_timer-self.attack_timer
+        self.frames_until_attack_allowed -= attack_timer_diff
 
     @property
     def collision_resolution_priority(self):
@@ -260,6 +273,9 @@ class Character(pygame.sprite.Sprite):
                 self.move_towards(self.target.rect)
         if self.frames_until_attack_allowed>0:
             self.frames_until_attack_allowed -= 1
+
+        for ability in self.abilities:
+            ability.update()
         return None
 
 
@@ -275,7 +291,7 @@ class Character(pygame.sprite.Sprite):
         # High interpolation value = more momentum
         # angle = self.last_move.angle_to(self.next_move)
         # valid_move = min(angle, 360-angle)<45
-        valid_move = self.next_move.magnitude()>self.speed*0.3
+        valid_move = self.next_move.magnitude()>self.speed*0.1
         if valid_move or self.willingness_to_move==0:
             actual_move = self.next_move.lerp(self.last_move, 0.1)
             actual_move = self.next_move
