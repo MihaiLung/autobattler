@@ -1,23 +1,30 @@
 from economy.economy_manager import EconomyManager
 from economy.goods import GOOD_STATS
 from economy.worker import get_worker_manager
-from map_logic.campaign_config import forest_campaign_config, home_node, CampaignConfig
+from map_logic.building_ui import BuildingUI
+from map_logic.campaign_config import forest_campaign_config, home_node, CampaignMapConfig
 from map_logic.managers.mouse_manager import MouseManager
 from map_logic.player import PlayerStatus, Player
-from ui.resource_topbar import ResourceTopBar, ResourceTracker
+from ui.resource_topbar import ResourceTopBar, ResourceTracker, WorkerTracker
 from settings import *
 from utils import get_asset_path
+
 import time
 
 player = Player(home_node, forest_campaign_config)
 
 class CampaignManager:
-    def __init__(self, screen, campaign_config: CampaignConfig, economy_manager: EconomyManager):
+    def __init__(self, screen, campaign_config: CampaignMapConfig, economy_manager: EconomyManager):
         self.screen = screen
         self.screen_rect = screen.get_rect()
         self.nodes = pygame.sprite.Group()
         self.campaign_config = campaign_config
         self.economy_manager = economy_manager
+
+        self.building_ui = BuildingUI("Buildings")
+        for building in economy_manager.buildings:
+            self.building_ui.add_building(building)
+        self.building_ui.refresh()
 
         for node in campaign_config.d_neighbors:
             self.nodes.add(node)
@@ -50,11 +57,11 @@ class CampaignManager:
         for worker in self.economy_manager.worker_counts:
             worker_stats = get_worker_manager(worker)
             resources.append(
-                ResourceTracker(
+                WorkerTracker(
                     worker.value.title(),
                     worker_stats.image_loc,
+                    self.economy_manager.unemployed_workers[worker],
                     self.economy_manager.worker_counts[worker],
-                    self.economy_manager.unemployed_workers[worker]
                 )
             )
         print(resources)
@@ -100,6 +107,13 @@ class CampaignManager:
                                 # Otherwise, compute the best path to target node
                                 else:
                                     player.travel_path = player.compute_path_to_node(node)
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_TAB:
+                    self.building_ui.toggle_on()
+            if event.type == pygame.KEYUP:
+                if event.key == pygame.K_TAB:
+                    self.building_ui.toggle_off()
+
 
 
 
@@ -113,10 +127,14 @@ class CampaignManager:
         player.draw(self.screen)
         self.resource_topbar.draw(self.screen)
 
+        if self.building_ui.should_display:
+            self.building_ui.draw(self.screen)
+
         # Tick the economy every 10 seconds
         if time.time()-self.checkpoint>1:
             self.checkpoint += 1
             self.economy_manager.tick_economy()
             self.refresh_resources()
+            self.building_ui.refresh()
 
 

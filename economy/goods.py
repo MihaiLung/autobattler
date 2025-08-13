@@ -22,8 +22,8 @@ class GoodStats:
 
 GOOD_STATS = {
     Good.GRAIN: GoodStats("grain_icon.png", 10, 10),
-    Good.MEAT: GoodStats("meat_icon.png", 10, 20),
-    Good.WOOD: GoodStats("wood_icon.png", 20, 40)
+    Good.MEAT: GoodStats("meat_icon.png", 10, 10),
+    Good.WOOD: GoodStats("wood_icon.png", 10, 10)
 }
 
 

@@ -35,6 +35,9 @@ class ProductionMethod:
     def remove_levels(self, levels: int):
         self.level = max(0, self.level - levels)
 
+    def total_capacity_from_worker_for_job(self, worker: Worker, job: Job):
+        return get_worker_manager(worker).get_job_capacity(job) * self.workforce[job][worker]
+
     def get_total_job_capacity_supply(self, job: Job) -> float:
         capacity = 0
         if job in self.job_capacity_demand_per_level:
@@ -150,7 +153,9 @@ class ProductionMethod:
 
 
 class Building:
-    def __init__(self, production_method: ProductionMethod, max_levels: int = 0):
+    def __init__(self, name: str, image_loc: str, production_method: ProductionMethod, max_levels: int = 0):
+        self.name = name
+        self.image_loc = image_loc
         self.production_method = production_method
         self.max_levels = max_levels
 
@@ -186,4 +191,4 @@ if __name__ == "__main__":
 
     # print(standard_woodcutting.get_total_job_capacity_supply(Job.WOODCUTTING))
 
-    Woods = Building(example_woodcutting, 20)
+    Woods = Building("Orc City", "orc_city.png", example_woodcutting, 20)

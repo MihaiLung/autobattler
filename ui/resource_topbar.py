@@ -1,10 +1,45 @@
 import pygame
 
+from economy.worker import Job
 from utils import load_image
 from settings import WIDTH
 from typing import Tuple
 
 TOPBAR_HEIGHT = 40
+
+
+class Tracker(pygame.sprite.Sprite):
+    FONT = pygame.font.SysFont("timesnewroman", 20)
+
+    def __init__(self, name:str, image_loc: str, image_size: Tuple[int, int]):
+        pygame.sprite.Sprite.__init__(self)
+        self.name = name
+        self.image = load_image(image_loc)
+        self.image = pygame.transform.smoothscale(self.image, image_size)
+        self.rect = self.image.get_rect()
+
+
+class WorkerTracker(Tracker):
+    def __init__(self, name:str, image_loc: str, num_unemployed: int, num_total: int):
+        super().__init__(name, image_loc, (TOPBAR_HEIGHT, TOPBAR_HEIGHT))
+        self.num_employed = num_total-num_unemployed
+        self.num_total = num_total
+
+    def refresh_display(self):
+        display_image = pygame.Surface((120, TOPBAR_HEIGHT), pygame.SRCALPHA)
+        display_image.blit(self.image, (0, 0))
+
+        employment_text = str(f"{self.num_employed} / {self.num_total}")
+        text_available_amount = ResourceTracker.FONT.render(
+            employment_text, True, "black"
+        ).convert_alpha()
+        text_available_amount_rect = text_available_amount.get_rect()
+        text_available_amount_rect.centery = int(TOPBAR_HEIGHT / 2)
+        text_available_amount_rect.left = int(TOPBAR_HEIGHT * 1.1)
+        display_image.blit(text_available_amount, text_available_amount_rect)
+
+        return display_image, display_image.get_rect()
+
 
 class ResourceTracker(pygame.sprite.Sprite):
     FONT = pygame.font.SysFont("timesnewroman", 20)
@@ -28,6 +63,7 @@ class ResourceTracker(pygame.sprite.Sprite):
     def refresh_display(self) -> Tuple[pygame.Surface, pygame.Rect]:
         display_image = pygame.Surface((120,TOPBAR_HEIGHT), pygame.SRCALPHA)
         display_image.blit(self.image, (0, 0))
+
         text_available_amount = ResourceTracker.FONT.render(str(int(self.amount)), True, "black").convert_alpha()
         text_available_amount_rect = text_available_amount.get_rect()
         text_available_amount_rect.centery = int(TOPBAR_HEIGHT/2)

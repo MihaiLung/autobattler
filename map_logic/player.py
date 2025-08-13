@@ -4,7 +4,7 @@ import networkx as nx
 import numpy as np
 import pygame
 
-from map_logic.campaign_config import forest_campaign_config, CampaignConfig
+from map_logic.campaign_config import forest_campaign_config, CampaignMapConfig
 from utils import get_asset_path, tdiff
 
 
@@ -14,7 +14,7 @@ class PlayerStatus(enum.Enum):
 
 
 class Player(pygame.sprite.Sprite):
-    def __init__(self, home_node, campaign_config: CampaignConfig):
+    def __init__(self, home_node, campaign_config: CampaignMapConfig):
         self.image = pygame.image.load(get_asset_path("pc.png")).convert_alpha()
         self.image = pygame.transform.smoothscale(self.image, (100,100))
         self.is_facing_left = False

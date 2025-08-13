@@ -207,7 +207,7 @@ standard_woodcutting = ProductionMethod(
 )
 
 standard_farming = ProductionMethod(
-    job_capacity_demand_per_level={Job.FARMING: 20},
+    job_capacity_demand_per_level={Job.FARMING: 20, Job.WOODCUTTING: 10},
     good_consumption={},
     good_production={Good.GRAIN: 8},
     level=50,
@@ -215,8 +215,8 @@ standard_farming = ProductionMethod(
 
 
 buildings = [
-    Building(standard_woodcutting),
-    Building(standard_farming),
+    Building("Lumber Mills", "orc_settlement.png", standard_woodcutting),
+    Building("Farms", "elf_settlement.png", standard_farming),
 ]
 workers = Counter({
     Worker.ORC: 40,

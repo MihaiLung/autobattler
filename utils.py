@@ -37,7 +37,6 @@ def add_dicts(d1, d2):
 
 def diff_dicts(d1, d2):
     d = {}
-    # print(set(d1.keys()) | set(d2.keys()))
     for key in set(d1.keys()) | set(d2.keys()):
         d[key] = d1.get(key, 0) - d2.get(key, 0)
     return d
@@ -49,3 +48,14 @@ def tadd(tuple1, tuple2):
 
 def tdiff(tuple1, tuple2):
     return tuple1[0] - tuple2[0], tuple1[1] - tuple2[1]
+
+def bound_rect_within_screen(rect: pygame.Rect, surface: pygame.Surface):
+    if rect.left<0:
+        rect.left = 0
+    if rect.right>surface.get_width():
+        rect.right = surface.get_width()
+    if rect.top<0:
+        rect.top = 0
+    if rect.bottom>surface.get_height():
+        rect.bottom = surface.get_height()
+    return rect

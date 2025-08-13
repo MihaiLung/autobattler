@@ -6,7 +6,7 @@ from map_logic.encounter_icon import CircularImageSprite
 
 
 
-class CampaignConfig:
+class CampaignMapConfig:
     def __init__(self, edges):
         self.edges = edges
         self.d_neighbors = {}
@@ -50,4 +50,4 @@ edges = [
     (wolf_node_2, wolf_node_3),
 ]
 
-forest_campaign_config = CampaignConfig(edges)
+forest_campaign_config = CampaignMapConfig(edges)
