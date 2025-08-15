@@ -136,11 +136,11 @@ class Div:
 
 class AddSoldierButton(pygame.sprite.Sprite):
     IMAGE_LOC = "add_user_button.png"
-    def __init__(self, building: Building):
+    def __init__(self, building_ui: 'BuildingEntry'):
         pygame.sprite.Sprite.__init__(self)
-        self.building = building
-        self.pm = building.production_method
-        if type(building.production_method) != MilitaryProductionMethod:
+        self.building_ui = building_ui
+        self.pm = building_ui.building.production_method
+        if type(self.pm) != MilitaryProductionMethod:
             raise ValueError("Trying to add soldier button for non-military production method!")
         self.button_press_effect = self.pm.add_soldiers
 
@@ -181,7 +181,7 @@ class BuildingEntry:
 
         self.add_soldier_button = None
         if type(self.pm)==MilitaryProductionMethod:
-            self.add_soldier_button = AddSoldierButton(self.building)
+            self.add_soldier_button = AddSoldierButton(self)
 
         self._building_div = None
 

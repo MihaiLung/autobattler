@@ -128,7 +128,6 @@ class CampaignManager:
     def update_economy(self):
         self.economy_manager.tick_economy()
         self.refresh_resources()
-        self.building_ui.compile()
 
 
     def update(self, pygame_events):
@@ -154,7 +153,8 @@ class CampaignManager:
                         if button.is_hovered and self.building_ui.should_display:
                             button.press_button()
                             self.economy_manager.unassign_worker(button.pm.input_worker)
-                            self.refresh_resources()
+                            # self.refresh_resources()
+                            self.update_economy()
 
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_TAB:
@@ -181,14 +181,9 @@ class CampaignManager:
             # print(len(self.building_ui.sprites))
 
         # Tick the economy every 10 seconds
-        if time.time()-self.checkpoint>1:
-            # self.update_economy()
-            thread = threading.Thread(target=self.update_economy)
-            thread.start()
-            # thread.join()
-            self.checkpoint += 1
-            # self.economy_manager.tick_economy()
-            # self.refresh_resources()
-            # self.building_ui.refresh()
-
+        if time.time()-self.checkpoint>3:
+            self.update_economy()
+            # thread = threading.Thread(target=self.update_economy)
+            # thread.start()
+            self.checkpoint += 3
 
