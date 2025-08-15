@@ -3,9 +3,12 @@ from typing import Optional, List, Tuple
 
 import pygame
 
+from economy.worker import Worker
+
 
 @dataclass
 class MinionStats:
+    name: str
     size: int
     health: int
     armour: int
@@ -15,6 +18,6 @@ class MinionStats:
     movement_speed: float
     mass: int
     image_loc: str
-    # weapon: pygame.Surface
+    race: Worker
     attack_cooldown: int = 90
     abilities: Optional[List] = None

@@ -11,7 +11,7 @@ from battle_logic.managers.battle_manager import BattleManager
 from battle_logic.character_settings.minion_stats import elf_stats
 from battle_logic.managers.battle_planning_manager import BattlePlanningManager
 from battle_logic.managers.battle_end_manager import BattleOutcomeManager
-from map_logic.campaign_config import forest_campaign_config
+from map_logic.campaign_map_config import forest_campaign_config
 from economy.economy_manager import economy_manager
 
 from battle_logic.logic.utils import *
@@ -22,8 +22,6 @@ clock = pygame.time.Clock()
 allies_config = [
     elf_stats,
 ]
-
-
 
 # Start up game
 campaign_manager = CampaignManager(screen, forest_campaign_config, economy_manager)
@@ -46,7 +44,7 @@ while True:
             battle_manager = BattleManager(
                 active_manager.allied_group,
                 active_manager.enemy_group,
-                screen
+                screen,
             )
             active_manager = battle_manager
             game_state = GameState.BATTLE
@@ -59,7 +57,7 @@ while True:
             triggered_encounter = campaign_manager.triggered_encounter
             enemies_config = triggered_encounter.enemies_config
             if enemies_config:
-                battle_planning_manager = BattlePlanningManager(allies_config, enemies_config, screen)
+                battle_planning_manager = BattlePlanningManager(allies_config, enemies_config, screen, campaign_manager.all_soldiers)
                 active_manager = battle_planning_manager
                 game_state = GameState.BATTLE_PREP
         if event.type == GameEvents.EnterCampaignMode.value:

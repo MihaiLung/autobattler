@@ -23,8 +23,13 @@ def get_asset_path(filename):
 
     return file_path
 
-def load_image(filename):
-    return pygame.image.load(get_asset_path(filename)).convert_alpha()
+def load_image(filename, size=None):
+    image = pygame.image.load(get_asset_path(filename)).convert_alpha()
+    if size is not None:
+        if type(size) is not tuple and len(size) != 2:
+            raise ValueError('size must be a 2-tuple')
+        image = pygame.transform.smoothscale(image, size)
+    return image
 
 def multiply_dict_by_value(d: Dict, m: float):
     return {key: d[key]*m for key in d}

@@ -1,12 +1,13 @@
-from battle_logic.character_settings.minion_base_class import MinionStats
-from battle_logic.character_settings.minion_stats import orc_stats
+from battle_logic.character_settings.minion_stats import orc_stats, Minion, MINION_TO_STATS
 from battle_logic.managers.battle_planning_mouse_manager import MouseManager
+from economy.worker import Worker
 from settings import *
 from battle_logic.character import Character, CharacterGroup
 from ui.sprite_summon_menu import SpriteSummonUI
 from ui.buttons import Button
 from ui.resource_topbar import ResourceTopBar, ResourceTracker
-from typing import List, Tuple
+from typing import List, Dict
+from collections import Counter
 
 
 
@@ -18,7 +19,7 @@ def generate_character_formation(
         character: Character,
         num_characters,
         max_per_row=8,
-        gap_multiplier=1.3,
+        gap_multiplier=1,
         enemy=True
 ):
     diameter = character.diameter
@@ -55,6 +56,7 @@ class BattlePlanningManager:
             allied_character_config: List[MinionStats],
             enemies_config: ENEMIES_CONFIG_DTYPE,
             screen: pygame.Surface,
+            soldiers_available: Dict[Worker, Counter[Minion]],
     ):
 
         self.allied_group = CharacterGroup()
@@ -85,9 +87,23 @@ class BattlePlanningManager:
             button_press_event=pygame.event.Event(GameEvents.BattlePlanningDone.value)
         )
 
-        resources = [
-            ResourceTracker("Elfs", "elf.png", 60)
-        ]
+
+
+        # resources = [
+        #     ResourceTracker("Elfs", "elf.png", 60)
+        # ]
+        resources = []
+        for worker in soldiers_available:
+            for soldier in soldiers_available[worker]:
+                if soldiers_available[worker][soldier]>0:
+                    resources.append(
+                        ResourceTracker(
+                            soldier.name.title(),
+                            MINION_TO_STATS[soldier].image_loc,
+                            soldiers_available[worker][soldier],
+                        )
+                    )
+
         self.resource_top_bar = ResourceTopBar(resources)
         self.mouse_manager = MouseManager(self.resource_top_bar)
 

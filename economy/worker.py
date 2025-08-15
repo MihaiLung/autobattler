@@ -13,11 +13,14 @@ class Job(enum.Enum):
     FARMING = 1
     WOODCUTTING = 2
     MAGIC = 3
+    SOLDIER = 4
+
 
 job_names = {
     Job.FARMING: "Farming",
     Job.WOODCUTTING: "Woodcutting",
-    Job.MAGIC: "Magic"
+    Job.MAGIC: "Magic",
+    Job.SOLDIER: "Soldier"
 }
 
 
@@ -64,7 +67,7 @@ class Worker(enum.Enum):
 
 WORKER_MANAGERS = {
     Worker.ELF:  WorkerManager(
-        "elf.png",
+        "elf_civilian.png",
         [
             JobCapacity(Job.FARMING, 5),
             JobCapacity(Job.WOODCUTTING, 2),
@@ -75,7 +78,7 @@ WORKER_MANAGERS = {
         }
     ),
     Worker.ORC:  WorkerManager(
-        "orc.png",
+        "orc_civilian.png",
         [
             JobCapacity(Job.FARMING, 1),
             JobCapacity(Job.WOODCUTTING, 5),

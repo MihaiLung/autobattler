@@ -4,7 +4,7 @@ import networkx as nx
 import numpy as np
 import pygame
 
-from map_logic.campaign_config import forest_campaign_config, CampaignMapConfig
+from map_logic.campaign_map_config import forest_campaign_config, CampaignMapConfig
 from utils import get_asset_path, tdiff
 
 

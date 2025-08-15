@@ -1,9 +1,13 @@
 from collections import Counter
 
-from economy.buildings import Building, ProductionMethod
+from battle_logic.character_settings.minion_base_class import MinionStats
+from battle_logic.character_settings.minion_stats import Minion
+from economy.production_methods.economic_production_method import ProductionMethod
+from economy.buildings import Building
 from economy.goods import Marketplace, Good
 from typing import List, Dict, Tuple
 
+from economy.production_methods.military_production_method import MilitaryProductionMethod
 from economy.worker import Worker, Job, get_worker_manager
 from utils import multiply_dict_by_value, add_dicts
 
@@ -116,6 +120,23 @@ class EconomyManager:
                 d_opportunities[building][job] = self.evaluate_impact_of_adding_worker_to_job(worker, job, building)
         return d_opportunities
 
+    def unassign_worker(self, worker: Worker):
+        found_worker = False
+        if self.unemployed_workers[worker]>0:
+            self.unemployed_workers[worker]-=1
+            found_worker = True
+        else:
+            for building in self.buildings:
+                for job in building.production_method.workforce:
+                    if building.production_method.workforce[job][worker]>0:
+                        building.production_method.workforce[job][worker]-=1
+                        found_worker = True
+                        break
+        if not found_worker:
+            raise ValueError(f"Tried unassigning a worker of race {worker.name} but none available")
+
+
+
     @property
     def shortage_buildings(self) -> List[Building]:
         shortage_buildings = []
@@ -126,10 +147,10 @@ class EconomyManager:
 
     def best_opportunity_for_worker(self, worker: Worker) -> WorkEvaluation:
         d_opportunities = self.evaluate_worker_opportunities(worker=worker)
-        print("Opportunities evaluations")
-        for building in d_opportunities:
-            for job in d_opportunities[building]:
-                print(f"-- {job} -- {d_opportunities[building][job]}")
+        # print("Opportunities evaluations")
+        # for building in d_opportunities:
+            # for job in d_opportunities[building]:
+                # print(f"-- {job} -- {d_opportunities[building][job]}")
         best_opportunity_value = 0.
         most_profitable_opportunity = None
         for building in d_opportunities:
@@ -139,7 +160,7 @@ class EconomyManager:
                 search_jobs = shortage_jobs
             else:
                 search_jobs = possible_jobs
-            print(f"Search jobs were: {search_jobs}")
+            # print(f"Search jobs were: {search_jobs}")
             for job in search_jobs:
                 opportunity_value = d_opportunities[building][job].opportunity_value
                 if opportunity_value > best_opportunity_value:
@@ -169,27 +190,27 @@ class EconomyManager:
         self.refresh_market()
 
         # Assign unemployed workers
-        num_worker_assignments_per_tick = 10
+        num_worker_assignments_per_tick = 2
         for i in range(num_worker_assignments_per_tick):
             worker_opportunites = []
-            print("="*20)
-            print("Opportunities at step ", i)
+            # print("="*20)
+            # print("Opportunities at step ", i)
 
             if sum(self.unemployed_workers.values())>0:
                 for worker in self.unemployed_workers:
-                    print(f"For worker {worker}:")
+                    # print(f"For worker {worker}:")
                     if self.unemployed_workers[worker]>0:
                         most_profitable_opportunity = self.best_opportunity_for_worker(worker=worker)
                         if most_profitable_opportunity is not None:
                             worker_opportunites.append(most_profitable_opportunity)
                     # print(f"Best opportunity: {most_profitable_opportunity}")
-                    print()
+                    # print()
 
                 if len(worker_opportunites)>0:
                     best_assignment = max(worker_opportunites, key=lambda w: w.value)
                     if type(best_assignment) is WorkEvaluation:
                         best_assignment.apply_assignment()
-                        print(f"Opportunity assigned to worker {best_assignment.worker} for job {best_assignment.job}")
+                        # print(f"Opportunity assigned to worker {best_assignment.worker} for job {best_assignment.job}")
                         self.unemployed_workers[best_assignment.worker] -= 1
 
                     # print(f"Job fulfillment: {self.buildings[0].production_method.job_fulfillment}")
@@ -200,23 +221,33 @@ class EconomyManager:
 
 
 standard_woodcutting = ProductionMethod(
-    job_capacity_demand_per_level={Job.WOODCUTTING: 15},
-    good_consumption={},
-    good_production={Good.WOOD: 10, Good.MEAT: 5},
-    level=50,
+    job_capacity_demand_per_level={Job.WOODCUTTING: 20},
+    good_consumption_per_level={},
+    good_production_per_level={Good.WOOD: 3, Good.MEAT: 10},
+    starting_levels=50,
 )
 
 standard_farming = ProductionMethod(
-    job_capacity_demand_per_level={Job.FARMING: 20, Job.WOODCUTTING: 10},
-    good_consumption={},
-    good_production={Good.GRAIN: 8},
-    level=50,
+    job_capacity_demand_per_level={Job.FARMING: 10},
+    good_consumption_per_level={Good.WOOD: 1},
+    good_production_per_level={Good.GRAIN: 8},
+    starting_levels=50,
+)
+
+elven_military = MilitaryProductionMethod(
+    job_capacity_demand_per_level={},
+    good_consumption_per_level={Good.WOOD: 1},
+    good_production_per_level={},
+    input_worker=Worker.ELF,
+    output_soldier=Minion.RANGER,
+    starting_level=60
 )
 
 
 buildings = [
     Building("Lumber Mills", "orc_settlement.png", standard_woodcutting),
     Building("Farms", "elf_settlement.png", standard_farming),
+    Building("Elven Barracks", "elf.png", elven_military),
 ]
 workers = Counter({
     Worker.ORC: 40,

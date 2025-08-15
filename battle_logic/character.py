@@ -85,7 +85,7 @@ class AttackManager:
 
 
 class Character(pygame.sprite.Sprite):
-    LONGEST_ATTACK_INTERVAL = 600
+    LONGEST_ATTACK_INTERVAL = 360
 
 
     def __init__(self, stats: MinionStats, own_group: Optional[CharacterGroup]=None, enemy_group: Optional[CharacterGroup]=None, image_raw: Optional[pygame.Surface] = None):

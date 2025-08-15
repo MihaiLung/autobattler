@@ -1,4 +1,26 @@
 import pygame
+from typing import Tuple
+
+
+# class GenericButton(pygame.sprite.Sprite):
+#     def __init__(
+#             self,
+#             default_image: pygame.Surface,
+#             hover_image: pygame.Surface
+#     ):
+#         super().__init__()
+#         self.default_image = default_image
+#         self.hover_image = hover_image
+#
+#         self.is_hovered = False
+#
+#     @property
+#     def is_hovered:
+#
+#
+#     @property
+#
+
 
 
 class Button(pygame.sprite.Sprite):
